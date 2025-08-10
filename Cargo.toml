@@ -1,6 +1,6 @@
 [package]
 name = "pmon"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Shuhei Matsuoka <matsuokashuheiii@gmail.com>"]
 description = "A CLI progress monitor (pmon) for time-based visualization"

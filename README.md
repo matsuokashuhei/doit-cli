@@ -1,335 +1,198 @@
-# pmon - CLI Progress Monitor Tool
+# pmon - Progress Monitor
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/matsuokashuhei/pmon/workflows/CI/badge.svg)](https://github.com/matsuokashuhei/pmon/actions)
 
-A command-line progress monitor tool for time-based visualization. Track time between two points with real-time progress updates, perfect for monitoring deadlines, work sessions, or any time-based process.
-
-![pmon demo](https://user-images.githubusercontent.com/example/pmon-demo.gif)
-
-## Quick Start
-
-```bash
-# Track an 8-hour work day (traditional usage)
-pmon --start "2025-01-27 09:00:00" --end "2025-01-27 17:00:00"
-
-# Track remaining work day (start from now)
-pmon --end "17:00:00"
-
-# Monitor a 2-hour meeting timer (start from now)
-pmon --end "2h" --interval 30
-
-# Create a countdown to a deadline (start from today 00:00:00)
-pmon --end "2025-02-15" --interval 3600
-```
+A command-line tool for time-based progress visualization. Specify start and end times (or duration) to display real-time progress bars.
 
 ## Features
 
-- ⏱️ **Time-based progress visualization** - Track progress between any two points in time
-- 📅 **Multiple time formats** - Support for dates, datetimes, and relative time expressions
-- 🔄 **Real-time updates** - Configurable update intervals from seconds to hours
-- 🎨 **Colored output** - Green/yellow/red progress bars with status indicators
-- 🖥️ **Cross-platform** - Works on Linux, macOS, and Windows
-- 📊 **Multiple output modes** - TTY-aware for terminals and piping
-- ⚡ **Lightweight** - Minimal resource usage, <10MB memory
-- 🚀 **Fast** - Optimized for frequent updates and long-running sessions
+- ⏱️ **Time-based Progress Display** - Visualize progress across specified time ranges
+- 🎯 **Flexible Time Specification** - Support for multiple datetime formats and relative time
+- 🔄 **Real-time Updates** - Live display with configurable update intervals
+- 🎨 **Color Text** - Clear and visible progress bar display
+- ⚡ **Lightweight & Fast** - Minimal resource usage
+- 🖥️ **Cross-platform** - Linux, macOS, Windows support
 
 ## Installation
 
-### Pre-built Binaries (Recommended)
-
-#### Linux
-```bash
-curl -L -o pmon https://github.com/matsuokashuhei/pmon/releases/latest/download/pmon-linux-x86_64
-chmod +x pmon
-sudo mv pmon /usr/local/bin/
-```
-
-#### macOS
-```bash
-# Intel Mac
-curl -L -o pmon https://github.com/matsuokashuhei/pmon/releases/latest/download/pmon-macos-x86_64
-
-# Apple Silicon
-curl -L -o pmon https://github.com/matsuokashuhei/pmon/releases/latest/download/pmon-macos-arm64
-
-chmod +x pmon
-sudo mv pmon /usr/local/bin/
-```
-
-#### Windows
-Download `pmon-windows-x86_64.exe` from the [releases page](https://github.com/matsuokashuhei/pmon/releases) and add to your PATH.
-
-### Package Managers
+### Using Cargo (Recommended)
 
 ```bash
-# Homebrew (macOS/Linux)
-brew tap matsuokashuhei/pmon
-brew install pmon
+# Clone the repository
+git clone https://github.com/matsuokashuhei/pmon.git
+cd pmon
 
-# Cargo (Rust)
-cargo install pmon-cli
+# Build and install
+cargo build --release
+sudo cp target/release/pmon /usr/local/bin/
 ```
 
-### From Source
+### Build from Source
 
 ```bash
 git clone https://github.com/matsuokashuhei/pmon.git
 cd pmon
-cargo build --release
-sudo mv target/release/pmon /usr/local/bin/
+cargo install --path .
 ```
-
-For detailed installation instructions for all platforms, see [Installation Guide](docs/installation.md).
 
 ## Usage
 
 ### Basic Syntax
 
 ```bash
-pmon [--start START_TIME] --end END_TIME [--interval SECONDS]
+pmon [OPTIONS] --end <END_TIME> | --duration <DURATION>
 ```
 
-**Note**: The `--start` parameter is optional. When omitted, pmon automatically determines the start time based on the end time format:
-- **Time-containing formats** (e.g., "17:00:00", "2h", "+30m") → Start from current time
-- **Date-only formats** (e.g., "2025-12-31") → Start from today at 00:00:00
-
-### Time Formats
-
-pmon supports three flexible time formats:
-
-#### Date Format (`YYYY-MM-DD`)
-```bash
-pmon --start "2025-01-27" --end "2025-01-28"
-```
-*Time defaults to 00:00:00 (midnight)*
-
-#### Datetime Format (`YYYY-MM-DD HH:MM:SS`)
-```bash
-pmon --start "2025-01-27 09:00:00" --end "2025-01-27 17:00:00"
-```
-*Full datetime in 24-hour format*
-
-#### Relative Time Format
-```bash
-pmon --start "2025-01-27 14:00:00" --end "2h"    # 2 hours
-pmon --start "2025-01-27 14:00:00" --end "90m"   # 90 minutes
-pmon --start "2025-01-27" --end "7d"             # 7 days
-pmon --start "2025-01-27 14:00:00" --end "3600s" # 3600 seconds
-```
-*Supports hours (h), minutes (m), days (d), and seconds (s)*
-
-### Automatic Start Time Detection
-
-When the `--start` parameter is omitted, pmon automatically determines the appropriate start time based on the end time format:
-
-#### Time-containing end formats → Current time as start
-```bash
-pmon --end "17:00:00"             # Work day tracking - start from now
-pmon --end "2025-07-27 17:00:00"  # Datetime format - start from now  
-pmon --end "2h"                   # Meeting timer - 2 hours from now
-pmon --end "+30m"                 # Study session - 30 minutes from now
-```
-
-#### Date-only end formats → Today 00:00:00 as start
-```bash
-pmon --end "2025-12-31"           # Project deadline - track from start of today
-```
-
-This feature makes pmon more intuitive for common use cases while maintaining backward compatibility.
-
-### Common Use Cases
-
-#### Work Day Tracking
-```bash
-# Standard 8-hour work day (traditional usage)
-pmon --start "2025-01-27 09:00:00" --end "2025-01-27 17:00:00"
-
-# Track remaining work day from now
-pmon --end "17:00:00"
-
-# Flexible start with relative end time
-pmon --start "$(date '+%Y-%m-%d 09:00:00')" --end "8h"
-```
-
-#### Meeting Timer
-```bash
-# 1-hour meeting with minute-by-minute updates (traditional usage)
-pmon --start "2025-01-27 14:00:00" --end "1h" --interval 60
-
-# 2-hour meeting starting now
-pmon --end "2h" --interval 60
-
-# 30-minute quick meeting starting now
-pmon --end "30m" --interval 30
-```
-
-#### Project Deadline
-```bash
-# Track progress to deadline with daily updates (traditional usage)
-pmon --start "2025-01-20" --end "2025-02-15" --interval 86400
-
-# Track remaining time to deadline from today
-pmon --end "2025-02-15" --interval 86400
-```
-
-#### Study/Focus Sessions
-```bash
-# Pomodoro timer (25 minutes) - traditional usage
-pmon --start "$(date '+%Y-%m-%d %H:%M:%S')" --end "25m" --interval 60
-
-# Pomodoro timer starting now
-pmon --end "25m" --interval 60
-
-# 2-hour study session
-pmon --end "2h" --interval 300
-```
-
-### Output Examples
-
-#### Terminal Output (TTY Mode)
-```
-pmon - Progress Bar Tool
-Start time: 2025-01-27 09:00:00
-End time: 2025-01-27 17:00:00
-Update interval: 60 seconds
-Press Ctrl+C to exit
-
-[████████░░░░░░░░░░░░░░░░░░░░] 32.5% (2h 36m elapsed, 5h 24m remaining)
-```
-
-#### Piped Output (Non-TTY Mode)
-```bash
-# Traditional usage with explicit start time
-pmon --start "2025-01-27 09:00:00" --end "8h" | while read line; do
-    echo "$(date): $line" >> progress.log
-done
-
-# New usage with auto-determined start time
-pmon --end "8h" | while read line; do
-    echo "$(date): $line" >> progress.log
-done
-```
-
-#### Color Coding
-- 🟢 **Green** (0-80%): Normal progress
-- 🟡 **Yellow** (80-100%): Nearing completion  
-- 🔴 **Red** (>100%): Overtime
-
-## Command Line Options
+### Command Line Options
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| `--start` | `-s` | Start time (optional) | Auto-determined from end time |
-| `--end` | `-e` | End time (required) | - |
-| `--interval` | `-i` | Update interval in seconds | 60 |
-| `--help` | `-h` | Show help message | - |
+| `--start` | `-s` | Start time | Current time |
+| `--end` | `-e` | End time | - |
+| `--duration` | `-d` | Duration | - |
+| `--interval` | `-i` | Update interval in seconds | 5 |
+| `--verbose` | `-v` | Enable verbose output | false |
+| `--help` | `-h` | Show help | - |
 | `--version` | `-V` | Show version | - |
 
-## Advanced Usage
+**Note**: `--end` and `--duration` are mutually exclusive. Specify only one of them.
 
-### Scripting Integration
+### Time Formats
 
+#### DateTime Formats
 ```bash
-#!/bin/bash
-# Track work day and send notifications (traditional usage)
+# Date only (time defaults to 00:00:00 or 23:59:59)
+pmon --start "2025-08-10" --end "2025-08-11"
 
-pmon --start "2025-01-27 09:00:00" --end "8h" --interval 300 | while read -r line; do
-    percentage=$(echo "$line" | grep -o '[0-9]*\.[0-9]*%')
-    
-    case $percentage in
-        "50.0%") notify-send "Work Progress" "Halfway through the day!" ;;
-        "100.0%") notify-send "Work Complete" "Time to go home!" ;;
-    esac
-done
+# Complete datetime
+pmon --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
-# Or use the simplified version starting from now
-pmon --end "8h" --interval 300 | while read -r line; do
-    percentage=$(echo "$line" | grep -o '[0-9]*\.[0-9]*%')
-    
-    case $percentage in
-        "50.0%") notify-send "Work Progress" "Halfway through the work session!" ;;
-        "100.0%") notify-send "Work Complete" "Session finished!" ;;
-    esac
-done
+# ISO 8601 format
+pmon --start "2025-08-10T09:00:00" --end "2025-08-10T17:00:00"
+
+# With timezone
+pmon --start "2025-08-10T09:00:00+09:00" --end "2025-08-10T17:00:00+09:00"
 ```
 
-### Background Monitoring
-
+#### Relative Time Formats (Duration)
 ```bash
-# Start pmon in background and monitor with logs (traditional usage)
-pmon --start "2025-01-27 09:00:00" --end "8h" > work_progress.log 2>&1 &
-tail -f work_progress.log
+# Seconds
+pmon --duration "30s"
 
-# Or start tracking from now
-pmon --end "8h" > work_progress.log 2>&1 &
-tail -f work_progress.log
+# Minutes
+pmon --duration "45m"
+
+# Hours
+pmon --duration "2h"
+
+# Days
+pmon --duration "7d"
 ```
 
-### Multiple Timers
+### Usage Examples
 
+#### 1. Work Session Tracking
 ```bash
-# Track multiple time periods simultaneously (traditional usage)
-pmon --start "2025-01-27 09:00:00" --end "8h" > work.log &
-pmon --start "2025-01-27 12:00:00" --end "1h" > lunch.log &
-pmon --start "2025-01-27 14:00:00" --end "2h" > meeting.log &
+# Track an 8-hour work day
+pmon --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
-# Or use simplified syntax where appropriate
-pmon --end "8h" > work.log &           # Work session from now
-pmon --end "1h" > lunch.log &          # 1-hour timer from now  
-pmon --end "2h" > meeting.log &        # 2-hour timer from now
+# 3-hour work session from now
+pmon --duration "3h"
 ```
 
-## Documentation
+#### 2. Meeting Timer
+```bash
+# 1-hour meeting with 30-second updates
+pmon --duration "1h" --interval 30
 
-- 📖 **[User Guide](docs/user_guide.md)** - Comprehensive usage guide with examples
-- 🔧 **[Installation Guide](docs/installation.md)** - Platform-specific installation instructions
-- 💻 **[Development Guide](docs/development_guide.md)** - For contributors and developers
-- 🚀 **[Build & Deployment](docs/build_deployment.md)** - Building and deployment procedures
-- 📚 **[API Documentation](docs/api_documentation.md)** - Library API reference
-- 🔍 **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
-- 📋 **[Examples](docs/examples/)** - Practical usage examples
-- 📄 **[Man Page](docs/man/pmon.1)** - Unix manual page
+# 2-hour meeting from specific time
+pmon --start "2025-08-10 14:00:00" --duration "2h"
+```
+
+#### 3. Project Deadline Tracking
+```bash
+# Track progress to project deadline (hourly updates)
+pmon --start "2025-08-01" --end "2025-08-31" --interval 3600
+```
+
+#### 4. Short-term Timers
+```bash
+# Pomodoro timer (25 minutes)
+pmon --duration "25m" --interval 60
+
+# Short break (5 minutes)
+pmon --duration "5m" --interval 10
+```
+
+### Output Example
+
+```
+
+
+
+Start:   2025-08-10 09:00:00
+End:     2025-08-10 17:00:00
+Elapsed: 42 % | 3 h 22 m
+
+(Quit: q, ESC, or Ctrl+C)
+```
+
+### Controls
+
+While the program is running, you can use these keys:
+
+- **q** - Quit
+- **ESC** - Quit
+- **Ctrl+C** - Quit
 
 ## Development
 
-### Quick Development Setup
+### Development Environment Setup
 
 ```bash
-# Clone and setup
-git clone https://github.com/matsuokashuhei/pmon.git
-cd pmon
-
-# Build and test
+# Install dependencies
 cargo build
+
+# Run tests
 cargo test
 
-# Run with sample data (traditional usage)
-cargo run -- --start "2025-01-27 12:00:00" --end "2025-01-27 13:00:00" --interval 5
-
-# Run with simplified syntax
-cargo run -- --end "1h" --interval 5
+# Run in development mode
+cargo run -- --duration "10s" --interval 1
 ```
 
-### Docker Development Environment
+### Project Structure
+
+```
+src/
+ main.rs          # Application entry point
+ lib.rs           # Library exports
+ cli.rs           # Command-line argument parsing
+ progress_bar.rs  # Progress bar calculation and rendering
+```
+
+### Dependencies
+
+- **clap** - Command-line argument parsing
+- **chrono** - Date and time operations
+- **colored** - Color text output
+- **crossterm** - Cross-platform terminal control
+- **anyhow** - Error handling
+- **thiserror** - Custom error types
+- **regex** - Regular expressions (for duration parsing)
+
+## Testing
 
 ```bash
-# Use Docker for consistent development environment
-./scripts/build.sh      # Build project
-./scripts/test.sh       # Run tests  
-./scripts/run.sh -- --help  # Run application
-./scripts/dev.sh shell  # Development shell
+# Run all tests
+cargo test
+
+# Run with verbose output
+cargo test -- --nocapture
+
+# Test specific functionality
+cargo test parse_duration
 ```
-
-### Contributing
-
-We welcome contributions! Please see our [Development Guide](docs/development_guide.md) for:
-
-- Setting up the development environment
-- Code organization and standards
-- Testing guidelines
-- Pull request process
 
 ## Performance
 
@@ -338,39 +201,64 @@ pmon is designed to be lightweight and efficient:
 - **Startup time**: <50ms
 - **Memory usage**: <10MB during operation
 - **CPU usage**: Minimal, only during updates
-- **Time parsing**: <10μs per operation
-- **Progress calculation**: <1μs per calculation
+- **Update frequency**: Configurable from 1-59 seconds
 
 ## Platform Support
 
 | Platform | Architecture | Status |
 |----------|-------------|--------|
 | Linux | x86_64 | ✅ Fully supported |
-| Linux | ARM64 | ✅ Fully supported |
+| Linux | ARM64 Fully supported | | 
 | macOS | Intel (x86_64) | ✅ Fully supported |
 | macOS | Apple Silicon (ARM64) | ✅ Fully supported |
 | Windows | x86_64 | ✅ Fully supported |
-| FreeBSD | x86_64 | 🟡 Community supported |
 
-## FAQ
+## Troubleshooting
 
-**Q: Can I pause and resume pmon?**  
-A: pmon tracks real time, so it can't be paused. Stop with Ctrl+C and restart with adjusted times.
+### Common Issues
 
-**Q: What happens when the end time is reached?**  
-A: pmon shows 100% completion and exits. If current time exceeds end time, it shows >100% in red.
+**Q: Program doesn't start or shows errors**
+- Check that start time is before end time
+- Verify time format is correct
+- Ensure interval is between 1-59 seconds
 
-**Q: Does pmon work across time zones?**  
-A: pmon uses local system time. Ensure your system clock is correct for accurate tracking.
+**Q: Progress bar doesn't update**
+- Check terminal compatibility
+- Verify update interval setting
+- Try reducing interval value
 
-**Q: Can I run multiple pmon instances?**  
-A: Yes! Run multiple instances in different terminals to track multiple time periods.
-
-For more questions, see [Troubleshooting Guide](docs/troubleshooting.md).
+**Q: Time parsing errors**
+- Use supported formats: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD`, or relative time (`1h`, `30m`, etc.)
+- Check timezone format if using timezone-aware times
 
 ## License
 
-pmon is licensed under the [MIT License](LICENSE). See LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Author
+
+Shuhei Matsuoka - [matsuokashuheiii@gmail.com](mailto:matsuokashuheiii@gmail.com)
+
+## Contributing
+
+Pull requests and issue reports are welcome. Please check existing issues before contributing.
+
+### Contributing Guidelines
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Ensure all tests pass: `cargo test`
+5. Check code formatting: `cargo fmt`
+6. Submit a pull request
+
+## Changelog
+
+### v0.2.0
+- Added duration-based time specification
+- Improved time parsing with multiple formats
+- Enhanced progress bar visualization
+- Added comprehensive test coverage
 
 ## Acknowledgments
 
@@ -381,4 +269,4 @@ pmon is licensed under the [MIT License](LICENSE). See LICENSE file for details.
 
 ---
 
-**⭐ Star this repo if you find pmon useful!**
+**⭐ If you find this tool useful, please give it a star!**

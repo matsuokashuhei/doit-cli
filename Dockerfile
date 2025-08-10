@@ -6,8 +6,8 @@ FROM rust:latest AS development
 # Install additional tools for development
 RUN apt-get update && apt-get install -y \
     git \
-    vim \
-    curl \
+    # vim \
+    # curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust components
@@ -51,7 +51,7 @@ RUN rm -rf src
 
 # Copy source code
 COPY src/ ./src/
-COPY tests/ ./tests/
+# COPY tests/ ./tests/
 
 # Build the application
 RUN cargo build --release
