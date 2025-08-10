@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/matsuokashuhei/pmon"
 
 [dependencies]
-clap = { version = "4.5.42", features = ["derive"] }
+clap = { version = "4.5.42", features = ["derive", "string"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 colored = "3.0.0"
 crossterm = "0.29.0"
