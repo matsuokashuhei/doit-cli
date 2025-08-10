@@ -8,13 +8,25 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "terminal.integrated.shell.linux": "/bin/bash"
+                "[rust]": {
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": "always",
+                        "source.fixAll": "always"
+                    },
+                    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+                    "editor.formatOnSave": true,
+                    "editor.formatOnType": true
+                }
             },
             "extensions": [
-                "rust-lang.rust-analyzer"
+                "fill-labs.dependi",
+                "rust-lang.rust-analyzer",
+                "tamasfe.even-better-toml",
+                "vadimcn.vscode-lldb"
             ]
         }
     },
     "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
     }
 }

@@ -1,276 +1,558 @@
-//! CLI argument parsing for pb tool
-//!
-//! This module provides command-line argument parsing using `clap` derive API.
-//! It handles required and optional arguments, validation, and help generation.
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
+use clap::{ArgAction, ArgMatches, Command};
+use regex::Regex;
+use std::process::exit;
 
-use crate::error::{PbError, PbResult};
-use clap::Parser;
-
-/// CLI progress monitor tool for time-based visualization
-#[derive(Parser, Debug)]
-#[command(name = "pmon")]
-#[command(about = "A CLI progress monitor (pmon) for time-based visualization")]
-#[command(version = env!("CARGO_PKG_VERSION"))]
-pub struct Cli {
-    /// Start time (e.g., "2023-12-01 10:00:00", "10:00", "+1h")
-    #[arg(short, long, help = "Start time")]
-    pub start: Option<String>,
-
-    /// End time (e.g., "2023-12-01 12:00:00", "12:00", "+3h")
-    #[arg(short, long, help = "End time")]
-    pub end: String,
-
-    /// Update interval in seconds
-    #[arg(short, long, default_value = "60", help = "Update interval in seconds")]
+#[derive(Debug)]
+pub struct Args {
+    pub start: DateTime<Local>,
+    pub end: DateTime<Local>,
     pub interval: u64,
-
-    /// Display verbose output including header information
-    #[arg(
-        short,
-        long,
-        default_value = "false",
-        help = "Display verbose output with header information"
-    )]
     pub verbose: bool,
 }
 
-impl Cli {
-    /// Parse command line arguments
-    ///
-    /// This method parses command line arguments and validates them.
-    /// Returns a `PbResult<Cli>` which can be an error if parsing fails.
-    pub fn parse_args() -> PbResult<Self> {
-        let cli = Self::try_parse().map_err(|e| {
-            // Handle clap errors and convert to our error types
-            match e.kind() {
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
-                    // For help and version, print the message and exit successfully
-                    println!("{e}");
-                    std::process::exit(0);
-                }
-                _ => {
-                    // For other clap errors, create an InvalidTimeFormat error
-                    // This is a fallback - in practice, most validation will be done elsewhere
-                    PbError::invalid_time_format(format!("CLI parsing error: {e}"))
-                }
-            }
-        })?;
+impl Args {
+    pub fn parse(matches: ArgMatches) -> Self {
+        let start = matches
+            .get_one::<DateTime<Local>>("start")
+            .cloned()
+            .unwrap();
+        let end = matches
+            .get_one::<DateTime<Local>>("end")
+            .cloned()
+            .unwrap_or_else(|| start + matches.get_one::<Duration>("duration").cloned().unwrap());
 
-        cli.validate()?;
-        Ok(cli)
-    }
-
-    /// Validate the parsed arguments
-    ///
-    /// Performs basic validation on the parsed arguments.
-    /// More detailed time parsing validation will be handled by the time_parser module.
-    pub fn validate(&self) -> PbResult<()> {
-        // Basic validation - more detailed validation will be in time_parser
-        if let Some(start) = &self.start {
-            if start.trim().is_empty() {
-                return Err(PbError::invalid_time_format("Start time cannot be empty"));
-            }
+        if let Err(e) = end_after_start(&end, &start) {
+            println!("{}", e);
+            exit(1);
         }
 
-        if self.end.trim().is_empty() {
-            return Err(PbError::invalid_time_format("End time cannot be empty"));
+        Args {
+            start,
+            end,
+            interval: matches.get_one("interval").cloned().unwrap(),
+            verbose: matches.get_one("verbose").cloned().unwrap(),
         }
+    }
+}
 
-        if self.interval == 0 {
-            return Err(PbError::invalid_time_format(
-                "Interval must be greater than 0",
-            ));
+pub fn build_command() -> Command {
+    Command::new("pmon")
+        .version(env!("CARGO_PKG_VERSION"))
+        .about("Progress Bar Tool")
+        .arg(
+            clap::Arg::new("start")
+                .short('s')
+                .long("start")
+                .value_parser(parse_start_time)
+                .default_value(Local::now().format("%Y-%m-%d %H:%M:%S").to_string())
+                .help("Start time"),
+        )
+        .arg(
+            clap::Arg::new("end")
+                .required(true)
+                .short('e')
+                .long("end")
+                .value_parser(parse_end_time)
+                .conflicts_with("duration")
+                .help("End time"),
+        )
+        .arg(
+            clap::Arg::new("duration")
+                .required(true)
+                .short('d')
+                .long("duration")
+                .value_parser(parse_duration)
+                .conflicts_with("end")
+                .help("Duration"),
+        )
+        .arg(
+            clap::Arg::new("interval")
+                .short('i')
+                .long("interval")
+                .value_parser(clap::value_parser!(u64).range(1..60))
+                .default_value("5")
+                .help("Update interval in seconds"),
+        )
+        .arg(
+            clap::Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .action(ArgAction::SetTrue)
+                .help("Display verbose output"),
+        )
+}
+
+fn parse_start_time(s: &str) -> Result<DateTime<Local>, String> {
+    if let Ok(datetime) = parse_datetime_as_ymd_hmsz(s) {
+        return Ok(datetime);
+    }
+    if let Ok(datetime) = parse_datetime_as_ymd_hms(s) {
+        return Ok(datetime);
+    }
+    if let Ok(datetime) = parse_datetime_as_ymd_hm(s) {
+        return Ok(datetime);
+    }
+    if let Ok(date) = parse_date(s) {
+        let datetime = date.and_hms_opt(0, 0, 0).unwrap();
+        return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+    }
+    Err(format!("Invalid start time format: {}", s))
+}
+
+fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
+    if let Ok(datetime) = parse_datetime_as_ymd_hmsz(s) {
+        return Ok(datetime);
+    }
+    if let Ok(datetime) = parse_datetime_as_ymd_hms(s) {
+        return Ok(datetime);
+    }
+    if let Ok(datetime) = parse_datetime_as_ymd_hm(s) {
+        return Ok(datetime.with_second(59).unwrap());
+    }
+    if let Ok(date) = parse_date(s) {
+        let datetime = date.and_hms_opt(23, 59, 59).unwrap();
+        return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+    }
+    Err(format!("Invalid end time format: {}", s))
+}
+
+fn end_after_start(end: &DateTime<Local>, start: &DateTime<Local>) -> Result<(), String> {
+    if end < start {
+        return Err(format!(
+            "End time {} must be after start time {}",
+            end.format("%Y-%m-%d %H:%M:%S"),
+            start.format("%Y-%m-%d %H:%M:%S")
+        ));
+    }
+    Ok(())
+}
+
+#[warn(non_snake_case)]
+fn parse_datetime_as_ymd_hmsz(s: &str) -> Result<DateTime<Local>, String> {
+    let formats = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z"];
+    for format in &formats {
+        if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
+            return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
         }
-
-        Ok(())
     }
+    Err(format!("Invalid datetime format: {}", s))
+}
 
-    /// Get start time as string
-    pub fn start(&self) -> Option<&str> {
-        self.start.as_deref()
+fn parse_datetime_as_ymd_hms(s: &str) -> Result<DateTime<Local>, String> {
+    let formats = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y%m%d%H%M%S"];
+    for format in &formats {
+        if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
+            return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+        }
     }
+    Err(format!("Invalid datetime format: {}", s))
+}
 
-    /// Get end time as string
-    pub fn end(&self) -> &str {
-        &self.end
+fn parse_datetime_as_ymd_hm(s: &str) -> Result<DateTime<Local>, String> {
+    let formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y%m%d%H%M"];
+    for format in &formats {
+        if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
+            return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+        }
     }
+    Err(format!("Invalid datetime format: {}", s))
+}
 
-    /// Get interval in seconds
-    pub fn interval(&self) -> u64 {
-        self.interval
+fn parse_date(s: &str) -> Result<NaiveDate, String> {
+    let date_formats = ["%Y-%m-%d", "%Y%m%d"];
+    for format in &date_formats {
+        if let Ok(date) = chrono::NaiveDate::parse_from_str(s, format) {
+            return Ok(date);
+        }
     }
+    Err(format!("Invalid date format: {}", s))
+}
 
-    /// Get verbose flag
-    pub fn verbose(&self) -> bool {
-        self.verbose
+fn parse_duration(s: &str) -> Result<Duration, String> {
+    let re = Regex::new(r"^(\d+)([smhd])$").unwrap();
+    if let Some(caps) = re.captures(s) {
+        let value = caps[1]
+            .parse::<i64>()
+            .map_err(|_| format!("Invalid duration value: {}", s))?;
+        let unit = &caps[2];
+        match unit {
+            "s" => return Ok(Duration::seconds(value)),
+            "m" => return Ok(Duration::minutes(value)),
+            "h" => return Ok(Duration::hours(value)),
+            "d" => return Ok(Duration::days(value)),
+            _ => {}
+        }
     }
+    Err(format!("Invalid duration format: {}", s))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use clap::CommandFactory;
 
     #[test]
-    fn test_cli_structure() {
-        // Test that the CLI structure is valid
-        Cli::command().debug_assert();
-    }
-
-    #[test]
-    fn test_parse_valid_args() {
-        // Test parsing valid arguments
-        let args = vec!["pmon", "--start", "10:00", "--end", "12:00"];
-        let cli = Cli::try_parse_from(args).unwrap();
-
-        assert_eq!(cli.start(), Some("10:00"));
-        assert_eq!(cli.end(), "12:00");
-        assert_eq!(cli.interval(), 60); // default value
-    }
-
-    #[test]
-    fn test_parse_with_interval() {
-        // Test parsing with custom interval
-        let args = vec!["pmon", "-s", "10:00", "-e", "12:00", "-i", "30"];
-        let cli = Cli::try_parse_from(args).unwrap();
-
-        assert_eq!(cli.start(), Some("10:00"));
-        assert_eq!(cli.end(), "12:00");
-        assert_eq!(cli.interval(), 30);
-    }
-
-    #[test]
-    fn test_parse_long_form() {
-        // Test parsing with long form arguments
+    fn test_parse_with_start() {
         let args = vec![
             "pmon",
             "--start",
-            "2023-12-01 10:00:00",
+            "2025-01-01 10:20:30",
             "--end",
-            "2023-12-01 12:00:00",
+            "2025-01-31 23:59:59",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.start.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-01 10:20:30"
+        );
+    }
+
+    #[test]
+    fn test_parse_without_start() {
+        let now = Local::now().with_nanosecond(0).unwrap();
+        let end = (now + Duration::days(30))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        let args = vec!["pmon", "--end", &end];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.start, now);
+    }
+
+    #[test]
+    fn test_parse_with_end() {
+        let args = vec![
+            "pmon",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-31 23:59:59"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_duration_seconds() {
+        let args = vec!["pmon", "--start", "2025-01-01 10:20:30", "--duration", "1s"];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-01 10:20:31"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_duration_minutes() {
+        let args = vec!["pmon", "--start", "2025-01-01 10:20:30", "--duration", "1m"];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-01 10:21:30"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_duration_hours() {
+        let args = vec!["pmon", "--start", "2025-01-01 10:20:30", "--duration", "1h"];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-01 11:20:30"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_duration_days() {
+        let args = vec!["pmon", "--start", "2025-01-01 10:20:30", "--duration", "1d"];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2025-01-02 10:20:30"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_valid_interval() {
+        let args = vec![
+            "pmon",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
             "--interval",
-            "120",
+            "10",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
-
-        assert_eq!(cli.start(), Some("2023-12-01 10:00:00"));
-        assert_eq!(cli.end(), "2023-12-01 12:00:00");
-        assert_eq!(cli.interval(), 120);
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.interval, 10);
     }
 
     #[test]
-    fn test_missing_required_args() {
-        // Test that missing required arguments are handled
-        let args = vec!["pmon"];
-        let result = Cli::try_parse_from(args);
-        assert!(result.is_err()); // --end is still required
-
-        // --start is now optional, so this should succeed
-        let args = vec!["pmon", "--end", "12:00"];
-        let result = Cli::try_parse_from(args);
-        assert!(result.is_ok());
-
-        let cli = result.unwrap();
-        assert_eq!(cli.start(), None); // start should be None when not provided
-        assert_eq!(cli.end(), "12:00");
-    }
-
-    #[test]
-    fn test_parse_args_validation() {
-        // Test the parse_args method with validation
-
-        // Mock command line args for testing
-        // In real usage, this would use std::env::args()
-        let test_cases = vec![
-            (vec!["pmon", "--start", "10:00", "--end", "12:00"], true),
-            (vec!["pmon", "-s", "10:00", "-e", "12:00", "-i", "30"], true),
-        ];
-
-        for (args, should_succeed) in test_cases {
-            let result = Cli::try_parse_from(args);
-            if should_succeed {
-                assert!(result.is_ok(), "Expected parsing to succeed");
-                if let Ok(cli) = result {
-                    assert!(cli.validate().is_ok(), "Expected validation to succeed");
-                }
-            } else {
-                assert!(result.is_err(), "Expected parsing to fail");
-            }
+    fn test_parse_with_invalid_interval() {
+        let test_cases = vec!["0", "61", "x"];
+        for interval in test_cases {
+            let args = vec![
+                "pmon",
+                "--start",
+                "2025-01-01 10:20:30",
+                "--end",
+                "2025-01-31 23:59:59",
+                "--interval",
+                interval,
+            ];
+            let command = build_command();
+            let result = command.try_get_matches_from(args);
+            assert!(result.is_err());
         }
     }
 
     #[test]
-    fn test_validation_empty_strings() {
-        // Test validation with empty strings
-        let args = vec!["pmon", "--start", "", "--end", "12:00"];
-        let cli = Cli::try_parse_from(args).unwrap();
-        assert!(cli.validate().is_err());
-
-        let args = vec!["pmon", "--start", "10:00", "--end", ""];
-        let cli = Cli::try_parse_from(args).unwrap();
-        assert!(cli.validate().is_err());
-    }
-
-    #[test]
-    fn test_validation_zero_interval() {
-        // Test validation with zero interval
+    fn test_parse_without_interval() {
         let args = vec![
             "pmon",
             "--start",
-            "10:00",
+            "2025-01-01 10:20:30",
             "--end",
-            "12:00",
-            "--interval",
-            "0",
+            "2025-01-31 23:59:59",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
-        assert!(cli.validate().is_err());
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.interval, 5);
     }
 
     #[test]
-    fn test_help_generation() {
-        // Test that help can be generated
-        let mut cmd = Cli::command();
-        let help = cmd.render_help();
-        let help_str = help.to_string();
-
-        assert!(help_str.contains("A CLI progress monitor (pmon) for time-based visualization"));
-        assert!(help_str.contains("Start time"));
-        assert!(help_str.contains("End time"));
-        assert!(help_str.contains("Update interval in seconds"));
-        assert!(help_str.contains("-s, --start"));
-        assert!(help_str.contains("-e, --end"));
-        assert!(help_str.contains("-i, --interval"));
-    }
-
-    #[test]
-    fn test_debug_output() {
-        // Test that the debug output is reasonable
-        let args = vec!["pmon", "--start", "10:00", "--end", "12:00"];
-        let cli = Cli::try_parse_from(args).unwrap();
-        let debug_str = format!("{cli:?}");
-
-        assert!(debug_str.contains("start: Some(\"10:00\")"));
-        assert!(debug_str.contains("end: \"12:00\""));
-        assert!(debug_str.contains("interval: 60"));
-    }
-
-    #[test]
-    fn test_getters() {
-        // Test getter methods
+    fn test_parse_with_verbose() {
         let args = vec![
             "pmon",
             "--start",
-            "10:00",
+            "2025-01-01 10:20:30",
             "--end",
-            "12:00",
-            "--interval",
-            "30",
+            "2025-01-31 23:59:59",
+            "--verbose",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.verbose, true);
+    }
 
-        assert_eq!(cli.start(), Some("10:00"));
-        assert_eq!(cli.end(), "12:00");
-        assert_eq!(cli.interval(), 30);
+    #[test]
+    fn test_parse_without_verbose() {
+        let args = vec![
+            "pmon",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.verbose, false);
+    }
+
+    #[test]
+    fn test_parse_start_time_with_success() {
+        let test_cases = vec![
+            ("2025-10-01 01:02", "2025-10-01 01:02:00"),
+            ("2025-10-01 01:02:03", "2025-10-01 01:02:03"),
+            ("2025-10-01T01:02:03+00:00", "2025-10-01 01:02:03"),
+            ("2025-10-01T01:02:03+09:00", "2025-10-01 01:02:03"),
+            ("20251001010203", "2025-10-01 01:02:03"),
+            ("202510010102", "2025-10-01 01:02:00"),
+            ("20251001", "2025-10-01 00:00:00"),
+            ("2025-10-01", "2025-10-01 00:00:00"),
+        ];
+        for (input, expected) in test_cases {
+            let result = parse_start_time(input)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            assert_eq!(result, expected);
+        }
+    }
+
+    #[test]
+    fn test_parse_start_time_with_failure() {
+        let test_cases = vec![
+            // %Y-%m-%d %H:%M:%S
+            "2025-00-01 01:02:00",
+            "2025-13-01 01:02:03",
+            "2025-10-00 01:02:00",
+            "2025-10-32 01:02:03",
+            "2025-10-01 25:02:03",
+            "2025-10-01 01:60:03",
+            // %Y-%m-%d %H:%M
+            "2025-00-01 01:02",
+            "2025-13-01 01:02",
+            "2025-10-00 01:02",
+            "2025-10-32 01:02",
+            "2025-10-01 25:02",
+            "2025-10-01 01:60",
+            // %Y-%m-%dT%H:%M:%S
+            "2025-00-01T01:02:00",
+            "2025-00-01T01:02:00",
+            "2025-13-01T01:02:03",
+            "2025-10-00T01:02:00",
+            "2025-10-32T01:02:03",
+            "2025-10-01T25:02:03",
+            "2025-10-01T01:60:03",
+            // %Y-%m-%dT%H:%M
+            "2025-00-01T01:02",
+            "2025-00-01T01:02",
+            "2025-13-01T01:02",
+            "2025-10-00T01:02",
+            "2025-10-32T01:02",
+            "2025-10-01T25:02",
+            // %Y%m%d%H%M%S
+            "20250001010200",
+            "20251301010203",
+            "20251000010200",
+            "20251032010203",
+            "20251001250203",
+            "20251001016003",
+            // %Y%m%d%H%M
+            "202500010102",
+            "202513010102",
+            "202510000102",
+            "202510320102",
+            "202510012502",
+            "202510010160",
+            // %Y-%m-%d
+            "2025-00-01",
+            "2025-13-01",
+            "2025-10-00",
+            "2025-10-32",
+            // %Y%m%d
+            "20250001",
+            "20251301",
+            "20251000",
+            "20251032",
+        ];
+        for input in test_cases {
+            let result = parse_start_time(input);
+            assert!(result.is_err(), "Failed to parse start time: {}", input);
+        }
+    }
+
+    #[test]
+    fn test_parse_end_time_with_success() {
+        let test_cases = vec![
+            ("2025-10-01 01:02", "2025-10-01 01:02:59"),
+            ("2025-10-01 01:02:03", "2025-10-01 01:02:03"),
+            ("2025-10-01T01:02:03+00:00", "2025-10-01 01:02:03"),
+            ("2025-10-01T01:02:03+09:00", "2025-10-01 01:02:03"),
+            ("20251001010203", "2025-10-01 01:02:03"),
+            ("202510010102", "2025-10-01 01:02:59"),
+            ("20251001", "2025-10-01 23:59:59"),
+            ("2025-10-01", "2025-10-01 23:59:59"),
+        ];
+        for (input, expected) in test_cases {
+            let result = parse_end_time(input)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            assert_eq!(result, expected);
+        }
+    }
+
+    #[test]
+    fn test_parse_end_time_with_failure() {
+        let test_cases = vec![
+            // %Y-%m-%d %H:%M:%S
+            "2025-00-01 01:02:00",
+            "2025-13-01 01:02:03",
+            "2025-10-00 01:02:00",
+            "2025-10-32 01:02:03",
+            "2025-10-01 25:02:03",
+            "2025-10-01 01:60:03",
+            // %Y-%m-%d %H:%M
+            "2025-00-01 01:02",
+            "2025-13-01 01:02",
+            "2025-10-00 01:02",
+            "2025-10-32 01:02",
+            "2025-10-01 25:02",
+            "2025-10-01 01:60",
+            // %Y-%m-%dT%H:%M:%S
+            "2025-00-01T01:02:00",
+            "2025-00-01T01:02:00",
+            "2025-13-01T01:02:03",
+            "2025-10-00T01:02:00",
+            "2025-10-32T01:02:03",
+            "2025-10-01T25:02:03",
+            "2025-10-01T01:60:03",
+            // %Y-%m-%dT%H:%M
+            "2025-00-01T01:02",
+            "2025-00-01T01:02",
+            "2025-13-01T01:02",
+            "2025-10-00T01:02",
+            "2025-10-32T01:02",
+            "2025-10-01T25:02",
+            // %Y%m%d%H%M%S
+            "20250001010200",
+            "20251301010203",
+            "20251000010200",
+            "20251032010203",
+            "20251001250203",
+            "20251001016003",
+            // %Y%m%d%H%M
+            "202500010102",
+            "202513010102",
+            "202510000102",
+            "202510320102",
+            "202510012502",
+            "202510010160",
+            // %Y-%m-%d
+            "2025-00-01",
+            "2025-13-01",
+            "2025-10-00",
+            "2025-10-32",
+            // %Y%m%d
+            "20250001",
+            "20251301",
+            "20251000",
+            "20251032",
+        ];
+        for input in test_cases {
+            let result = parse_end_time(input);
+            assert!(result.is_err(), "Failed to parse start time: {}", input);
+        }
+    }
+
+    #[test]
+    fn test_end_after_start() {
+        let test_cases = vec![
+            ("2025-10-01 01:02:02", "2025-10-01 01:02:03", true),
+            ("2025-10-01 01:02:02", "2025-10-01 01:02:01", false),
+            ("2025-10-01 01:02:03", "2025-10-01 01:02:03", true),
+        ];
+        for (start_input, end_input, expected) in test_cases {
+            let start = TimeZone::from_utc_datetime(
+                &Local,
+                &NaiveDateTime::parse_from_str(start_input, "%Y-%m-%d %H:%M:%S").unwrap(),
+            );
+            let end = TimeZone::from_utc_datetime(
+                &Local,
+                &NaiveDateTime::parse_from_str(end_input, "%Y-%m-%d %H:%M:%S").unwrap(),
+            );
+            assert_eq!(end_after_start(&end, &start).is_ok(), expected);
+        }
+    }
+
+    #[test]
+    fn test_parse_duration() {
+        assert_eq!(parse_duration("1s"), Ok(Duration::seconds(1)));
+        assert_eq!(parse_duration("2m"), Ok(Duration::minutes(2)));
+        assert_eq!(parse_duration("3h"), Ok(Duration::hours(3)));
+        assert_eq!(parse_duration("4d"), Ok(Duration::days(4)));
+        assert!(parse_duration("5x").is_err());
     }
 }
