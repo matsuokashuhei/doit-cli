@@ -3,14 +3,15 @@
 //! This module provides command-line argument parsing using `clap` derive API.
 //! It handles required and optional arguments, validation, and help generation.
 
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
 use clap::Parser;
+use regex::Regex;
 
 /// CLI progress monitor tool for time-based visualization
 #[derive(Parser, Debug)]
 #[command(name = "pmon")]
 #[command(version, about, long_about = None)]
-pub struct Cli {
+pub struct Args {
     #[arg(
         short,
         long,
@@ -23,11 +24,18 @@ pub struct Cli {
         long,
         value_parser = parse_end_time,
         help = "End time")]
-    pub end: DateTime<Local>,
+    pub end: Option<DateTime<Local>>,
     #[arg(
         short,
         long,
-        default_value = "1",
+        value_parser = parse_duration,
+        // conflits_with = end,
+        help = "Duration")]
+    pub duration: Option<Duration>,
+    #[arg(
+        short,
+        long,
+        default_value = "5",
         value_parser = clap::value_parser!(u64).range(1..60),
         help = "Update interval in seconds")]
     pub interval: u64,
@@ -74,6 +82,17 @@ fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
     Err(format!("Invalid end time format: {}", s))
 }
 
+fn end_after_start(end: &DateTime<Local>, start: &DateTime<Local>) -> Result<(), String> {
+    if end < start {
+        return Err(format!(
+            "End time {} must be after start time {}",
+            end.format("%Y-%m-%d %H:%M:%S"),
+            start.format("%Y-%m-%d %H:%M:%S")
+        ));
+    }
+    Ok(())
+}
+
 #[warn(non_snake_case)]
 fn parse_datetime_as_ymd_hmsz(s: &str) -> Result<DateTime<Local>, String> {
     let formats = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z"];
@@ -115,6 +134,24 @@ fn parse_date(s: &str) -> Result<NaiveDate, String> {
     Err(format!("Invalid date format: {}", s))
 }
 
+fn parse_duration(s: &str) -> Result<Duration, String> {
+    let re = Regex::new(r"^(\d+)([smhd])$").unwrap();
+    if let Some(caps) = re.captures(s) {
+        let value = caps[1]
+            .parse::<i64>()
+            .map_err(|_| format!("Invalid duration value: {}", s))?;
+        let unit = &caps[2];
+        match unit {
+            "s" => return Ok(Duration::seconds(value)),
+            "m" => return Ok(Duration::minutes(value)),
+            "h" => return Ok(Duration::hours(value)),
+            "d" => return Ok(Duration::days(value)),
+            _ => {}
+        }
+    }
+    Err(format!("Invalid duration format: {}", s))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -128,7 +165,7 @@ mod tests {
             "--end",
             "2025-01-31 23:59:59",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(
             cli.start.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-01 10:20:30"
@@ -138,7 +175,7 @@ mod tests {
     #[test]
     fn test_parse_without_start() {
         let args = vec!["pmon", "--end", "2025-12-31"];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
 
         // Get current time and allow small tolerance for execution time
         let now = Local::now().with_nanosecond(0).unwrap();
@@ -161,7 +198,7 @@ mod tests {
             "--end",
             "2025-01-31 23:59:59",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(
             cli.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-31 23:59:59"
@@ -179,7 +216,7 @@ mod tests {
             "--interval",
             "5",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(cli.interval, 5);
     }
 
@@ -192,7 +229,7 @@ mod tests {
             "--end",
             "2025-01-31 23:59:59",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(cli.interval, 1);
     }
 
@@ -206,7 +243,7 @@ mod tests {
             "2025-01-31 23:59:59",
             "--verbose",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(cli.verbose, true);
     }
 
@@ -219,7 +256,7 @@ mod tests {
             "--end",
             "2025-01-31 23:59:59",
         ];
-        let cli = Cli::try_parse_from(args).unwrap();
+        let cli = Args::try_parse_from(args).unwrap();
         assert_eq!(cli.verbose, false);
     }
 
