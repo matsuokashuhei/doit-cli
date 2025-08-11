@@ -16,7 +16,7 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
-    let progress_bar = ProgressBar::new(args.start.naive_local(), args.end.naive_local());
+    let progress_bar = ProgressBar::new(args.start.naive_utc(), args.end.naive_utc());
 
     enable_raw_mode()?;
     loop {
@@ -68,7 +68,7 @@ fn reset_terminal<W>(w: &mut W) -> Result<()>
 where
     W: Write,
 {
-    queue!(w, MoveTo(0, 8), Show)?;
+    queue!(w, MoveTo(0, 7), Show)?;
     w.flush()?;
     Ok(())
 }

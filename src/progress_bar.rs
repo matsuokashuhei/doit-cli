@@ -4,7 +4,7 @@
 //! for time-based progress visualization with color support.
 
 use anyhow::Result;
-use chrono::{Local, NaiveDateTime, TimeDelta};
+use chrono::{Local, NaiveDateTime, TimeDelta, Timelike};
 use crossterm::{
     cursor::{Hide, MoveTo},
     queue,
@@ -22,22 +22,12 @@ pub struct ProgressBar {
 }
 
 impl ProgressBar {
-    /// Create a new ProgressBar instance with start and end times
-    ///
-    /// # Arguments
-    ///
-    /// * `start` - The start time as `NaiveDateTime`
-    /// * `end` - The end time as `NaiveDateTime`
-    ///
-    /// # Returns
-    ///
-    /// A new `ProgressBar` instance
     pub fn new(start: NaiveDateTime, end: NaiveDateTime) -> Self {
         ProgressBar { start, end }
     }
 
     fn current_time(&self) -> NaiveDateTime {
-        Local::now().naive_utc()
+        Local::now().naive_local().with_nanosecond(0).unwrap()
     }
 
     fn calculate_progress_at(&self, current: Option<NaiveDateTime>) -> f64 {
@@ -110,6 +100,8 @@ impl ProgressBar {
             MoveTo(0, 4),
             PrintStyledContent(format!("End:     {}", self.end).with(Color::Reset)),
             MoveTo(0, 5),
+            // PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
+            // MoveTo(0, 6),
             PrintStyledContent(
                 format!(
                     "Elapsed: {:.0} % | {}",
