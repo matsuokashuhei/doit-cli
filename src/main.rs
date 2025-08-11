@@ -6,7 +6,7 @@ use crossterm::{
     queue,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use pmon::{build_command, Args, ProgressBar};
+use doit::{build_command, Args, ProgressBar};
 use std::io::{stdout, Write};
 use std::time::Duration;
 
