@@ -547,8 +547,9 @@ mod tests {
             ("2025-10-01 01:02:03+00:00", "2025-10-01 01:02:03"),
         ];
         for (input, expected) in test_cases {
-            let naive_datetime =
-                NaiveDateTime::parse_from_str(input, "%Y-%m-%d %H:%M:%S%z").unwrap();
+            let datetime_with_tz =
+                DateTime::parse_from_str(input, "%Y-%m-%d %H:%M:%S%z").unwrap();
+            let naive_datetime = datetime_with_tz.naive_local();
             let local_datetime = convert_from_utc(&naive_datetime);
             assert_eq!(
                 local_datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
