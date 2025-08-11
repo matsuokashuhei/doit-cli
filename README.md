@@ -1,4 +1,4 @@
-# justdoit - Progress Monitor
+# doit - Progress Monitor
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -25,7 +25,7 @@ cd pmon
 
 # Build and install
 cargo build --release
-sudo cp target/release/justdoit /usr/local/bin/
+sudo cp target/release/doit /usr/local/bin/
 ```
 
 ### Build from Source
@@ -41,7 +41,7 @@ cargo install --path .
 ### Basic Syntax
 
 ```bash
-justdoit [OPTIONS] --end <END_TIME> | --duration <DURATION>
+doit [OPTIONS] --end <END_TIME> | --duration <DURATION>
 ```
 
 ### Command Line Options
@@ -63,31 +63,31 @@ justdoit [OPTIONS] --end <END_TIME> | --duration <DURATION>
 #### DateTime Formats
 ```bash
 # Date only (time defaults to 00:00:00 or 23:59:59)
-justdoit --start "2025-08-10" --end "2025-08-11"
+doit --start "2025-08-10" --end "2025-08-11"
 
 # Complete datetime
-justdoit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
+doit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
 # ISO 8601 format
-justdoit --start "2025-08-10T09:00:00" --end "2025-08-10T17:00:00"
+doit --start "2025-08-10T09:00:00" --end "2025-08-10T17:00:00"
 
 # With timezone
-justdoit --start "2025-08-10T09:00:00+09:00" --end "2025-08-10T17:00:00+09:00"
+doit --start "2025-08-10T09:00:00+09:00" --end "2025-08-10T17:00:00+09:00"
 ```
 
 #### Relative Time Formats (Duration)
 ```bash
 # Seconds
-justdoit --duration "30s"
+doit --duration "30s"
 
 # Minutes
-justdoit --duration "45m"
+doit --duration "45m"
 
 # Hours
-justdoit --duration "2h"
+doit --duration "2h"
 
 # Days
-justdoit --duration "7d"
+doit --duration "7d"
 ```
 
 ### Usage Examples
@@ -95,34 +95,34 @@ justdoit --duration "7d"
 #### 1. Work Session Tracking
 ```bash
 # Track an 8-hour work day
-justdoit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
+doit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
 # 3-hour work session from now
-justdoit --duration "3h"
+doit --duration "3h"
 ```
 
 #### 2. Meeting Timer
 ```bash
 # 1-hour meeting with 30-second updates
-justdoit --duration "1h" --interval 30
+doit --duration "1h" --interval 30
 
 # 2-hour meeting from specific time
-justdoit --start "2025-08-10 14:00:00" --duration "2h"
+doit --start "2025-08-10 14:00:00" --duration "2h"
 ```
 
 #### 3. Project Deadline Tracking
 ```bash
 # Track progress to project deadline (hourly updates)
-justdoit --start "2025-08-01" --end "2025-08-31" --interval 3600
+doit --start "2025-08-01" --end "2025-08-31" --interval 3600
 ```
 
 #### 4. Short-term Timers
 ```bash
 # Pomodoro timer (25 minutes)
-justdoit --duration "25m" --interval 60
+doit --duration "25m" --interval 60
 
 # Short break (5 minutes)
-justdoit --duration "5m" --interval 10
+doit --duration "5m" --interval 10
 ```
 
 ### Output Example
@@ -196,7 +196,7 @@ cargo test parse_duration
 
 ## Performance
 
-justdoit is designed to be lightweight and efficient:
+doit is designed to be lightweight and efficient:
 
 - **Startup time**: <50ms
 - **Memory usage**: <10MB during operation
@@ -208,7 +208,7 @@ justdoit is designed to be lightweight and efficient:
 | Platform | Architecture | Status |
 |----------|-------------|--------|
 | Linux | x86_64 | ✅ Fully supported |
-| Linux | ARM64 Fully supported | | 
+| Linux | ARM64 Fully supported | |
 | macOS | Intel (x86_64) | ✅ Fully supported |
 | macOS | Apple Silicon (ARM64) | ✅ Fully supported |
 | Windows | x86_64 | ✅ Fully supported |

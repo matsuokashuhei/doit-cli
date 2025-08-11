@@ -41,7 +41,7 @@ impl Args {
 }
 
 pub fn build_command() -> Command {
-    Command::new("justdoit")
+    Command::new("doit")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Just Do It! - Progress Bar Tool for Motivation")
         .arg(
@@ -190,7 +190,7 @@ mod tests {
     #[test]
     fn test_parse_with_start() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
@@ -210,7 +210,7 @@ mod tests {
         let end = (now + Duration::days(30))
             .format("%Y-%m-%d %H:%M:%S")
             .to_string();
-        let args = vec!["justdoit", "--end", &end];
+        let args = vec!["doit", "--end", &end];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.start, now);
@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn test_parse_with_end() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn test_parse_with_duration_seconds() {
-        let args = vec!["justdoit", "--start", "2025-01-01 10:20:30", "--duration", "1s"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1s"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_parse_with_duration_minutes() {
-        let args = vec!["justdoit", "--start", "2025-01-01 10:20:30", "--duration", "1m"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1m"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn test_parse_with_duration_hours() {
-        let args = vec!["justdoit", "--start", "2025-01-01 10:20:30", "--duration", "1h"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1h"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_parse_with_duration_days() {
-        let args = vec!["justdoit", "--start", "2025-01-01 10:20:30", "--duration", "1d"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1d"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
@@ -280,7 +280,7 @@ mod tests {
     #[test]
     fn test_parse_with_valid_interval() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
@@ -298,7 +298,7 @@ mod tests {
         let test_cases = vec!["0", "61", "x"];
         for interval in test_cases {
             let args = vec![
-                "justdoit",
+                "doit",
                 "--start",
                 "2025-01-01 10:20:30",
                 "--end",
@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn test_parse_without_interval() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn test_parse_with_verbose() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn test_parse_without_verbose() {
         let args = vec![
-            "justdoit",
+            "doit",
             "--start",
             "2025-01-01 10:20:30",
             "--end",
