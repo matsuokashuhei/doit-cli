@@ -95,10 +95,10 @@ fn parse_start_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-        return Ok(Local.from_local_datetime(&datetime).single()
-            .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
+        return Local.from_local_datetime(&datetime).single()
+            .ok_or_else(|| format!("Ambiguous or invalid datetime: {s}"));
     }
-    Err(format!("Invalid start time format: {}", s))
+    Err(format!("Invalid start time format: {s}"))
 }
 
 fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
@@ -113,10 +113,10 @@ fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(23, 59, 59).unwrap();
-        return Ok(Local.from_local_datetime(&datetime).single()
-            .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
+        return Local.from_local_datetime(&datetime).single()
+            .ok_or_else(|| format!("Ambiguous or invalid datetime: {s}"));
     }
-    Err(format!("Invalid end time format: {}", s))
+    Err(format!("Invalid end time format: {s}"))
 }
 
 fn end_after_start(end: &DateTime<Local>, start: &DateTime<Local>) -> Result<(), String> {
@@ -145,22 +145,22 @@ fn parse_datetime_as_ymd_hms(s: &str) -> Result<DateTime<Local>, String> {
     let formats = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y%m%d%H%M%S"];
     for format in &formats {
         if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
-            return Ok(Local.from_local_datetime(&datetime).single()
-                .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
+            return Local.from_local_datetime(&datetime).single()
+                .ok_or_else(|| format!("Ambiguous or invalid datetime: {s}"));
         }
     }
-    Err(format!("Invalid datetime format: {}", s))
+    Err(format!("Invalid datetime format: {s}"))
 }
 
 fn parse_datetime_as_ymd_hm(s: &str) -> Result<DateTime<Local>, String> {
     let formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y%m%d%H%M"];
     for format in &formats {
         if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
-            return Ok(Local.from_local_datetime(&datetime).single()
-                .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
+            return Local.from_local_datetime(&datetime).single()
+                .ok_or_else(|| format!("Ambiguous or invalid datetime: {s}"));
         }
     }
-    Err(format!("Invalid datetime format: {}", s))
+    Err(format!("Invalid datetime format: {s}"))
 }
 
 fn parse_date(s: &str) -> Result<NaiveDate, String> {
