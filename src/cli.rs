@@ -95,7 +95,8 @@ fn parse_start_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-        return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+        return Ok(Local.from_local_datetime(&datetime).single()
+            .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
     }
     Err(format!("Invalid start time format: {}", s))
 }
@@ -112,7 +113,8 @@ fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(23, 59, 59).unwrap();
-        return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+        return Ok(Local.from_local_datetime(&datetime).single()
+            .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
     }
     Err(format!("Invalid end time format: {}", s))
 }
@@ -143,7 +145,8 @@ fn parse_datetime_as_ymd_hms(s: &str) -> Result<DateTime<Local>, String> {
     let formats = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y%m%d%H%M%S"];
     for format in &formats {
         if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
-            return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+            return Ok(Local.from_local_datetime(&datetime).single()
+                .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
         }
     }
     Err(format!("Invalid datetime format: {}", s))
@@ -153,7 +156,8 @@ fn parse_datetime_as_ymd_hm(s: &str) -> Result<DateTime<Local>, String> {
     let formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y%m%d%H%M"];
     for format in &formats {
         if let Ok(datetime) = NaiveDateTime::parse_from_str(s, format) {
-            return Ok(TimeZone::from_utc_datetime(&Local, &datetime));
+            return Ok(Local.from_local_datetime(&datetime).single()
+                .ok_or_else(|| format!("Ambiguous or invalid datetime: {}", s))?);
         }
     }
     Err(format!("Invalid datetime format: {}", s))
@@ -535,14 +539,12 @@ mod tests {
             ("2025-10-01 01:02:03", "2025-10-01 01:02:03", true),
         ];
         for (start_input, end_input, expected) in test_cases {
-            let start = TimeZone::from_utc_datetime(
-                &Local,
-                &NaiveDateTime::parse_from_str(start_input, "%Y-%m-%d %H:%M:%S").unwrap(),
-            );
-            let end = TimeZone::from_utc_datetime(
-                &Local,
-                &NaiveDateTime::parse_from_str(end_input, "%Y-%m-%d %H:%M:%S").unwrap(),
-            );
+            let start = Local.from_local_datetime(
+                &NaiveDateTime::parse_from_str(start_input, "%Y-%m-%d %H:%M:%S").unwrap()
+            ).single().unwrap();
+            let end = Local.from_local_datetime(
+                &NaiveDateTime::parse_from_str(end_input, "%Y-%m-%d %H:%M:%S").unwrap()
+            ).single().unwrap();
             assert_eq!(end_after_start(&end, &start).is_ok(), expected);
         }
     }
@@ -554,5 +556,34 @@ mod tests {
         assert_eq!(parse_duration("3h"), Ok(Duration::hours(3)));
         assert_eq!(parse_duration("4d"), Ok(Duration::days(4)));
         assert!(parse_duration("5x").is_err());
+    }
+
+    #[test]
+    fn test_timezone_handling_consistency() {
+        // Test that the parsing methods correctly interpret datetime as local time
+        // The key issue is that from_utc_datetime treats the NaiveDateTime as UTC
+        // and converts it to local time, which causes incorrect results in non-UTC zones
+        
+        use chrono::{NaiveDateTime};
+        
+        let naive_dt = NaiveDateTime::parse_from_str("2025-08-11 15:30:45", "%Y-%m-%d %H:%M:%S").unwrap();
+        
+        // Correct approach (what our fixed code should do)
+        let local_approach = Local.from_local_datetime(&naive_dt).single().unwrap();
+        
+        // The local approach should preserve the naive datetime representation
+        assert_eq!(local_approach.naive_local(), naive_dt);
+        
+        // Test our parsing functions use the correct approach  
+        let date_input = "2025-08-11";
+        let start_result = parse_start_time(date_input).unwrap();
+        let end_result = parse_end_time(date_input).unwrap();
+        
+        // The parsed times should have naive_local() that matches expected local time
+        let expected_start_naive = NaiveDateTime::parse_from_str("2025-08-11 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let expected_end_naive = NaiveDateTime::parse_from_str("2025-08-11 23:59:59", "%Y-%m-%d %H:%M:%S").unwrap();
+        
+        assert_eq!(start_result.naive_local(), expected_start_naive);
+        assert_eq!(end_result.naive_local(), expected_end_naive);
     }
 }
