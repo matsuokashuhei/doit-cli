@@ -30,14 +30,6 @@ impl Args {
             );
             exit(1);
         }
-        // if end < Local::now() {
-        //     println!(
-        //         "End time {end} must be after the current time {current}.",
-        //         end = end.format("%Y-%m-%d %H:%M:%S"),
-        //         current = Local::now().format("%Y-%m-%d %H:%M:%S")
-        //     );
-        //     exit(1);
-        // }
 
         Args {
             start,
