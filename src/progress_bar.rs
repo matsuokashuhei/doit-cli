@@ -56,8 +56,41 @@ impl ProgressBar {
         }
     }
 
-    fn render_elapsed_time(&self, current: Option<NaiveDateTime>) -> String {
-        let elapsed = self.calculate_elapsed_time(current);
+    fn format_start_time(&self) -> String {
+        let label = "Start:";
+        let value = self.start.format("%Y-%m-%d %H:%M:%S").to_string();
+        self.format_verbose_line(label, &value)
+    }
+
+    fn format_end_time(&self) -> String {
+        let label = "End:";
+        let value = self.end.format("%Y-%m-%d %H:%M:%S").to_string();
+        self.format_verbose_line(label, &value)
+    }
+
+    fn format_progress(&self, current: NaiveDateTime) -> String {
+        let progress = self.calculate_progress_at(Some(current)) * 100.0;
+        format!("{:.0} %", progress)
+    }
+
+    fn format_progress_and_elapsed(&self) -> String {
+        let current_time = self.current_time();
+        let label = "Elapsed:";
+        let value = format!(
+            "{} | {}",
+            self.format_progress(current_time),
+            self.format_elapsed_time(current_time)
+        );
+        self.format_verbose_line(label, &value)
+    }
+
+    fn format_verbose_line(&self, label: &str, value: &str) -> String {
+        let spaces = " ".repeat(BAR_WIDTH - label.len() - value.len());
+        format!("{label}{spaces}{value}")
+    }
+
+    fn format_elapsed_time(&self, current: NaiveDateTime) -> String {
+        let elapsed = self.calculate_elapsed_time(Some(current));
         let minutes = elapsed.num_minutes();
         if minutes < 60 {
             return format!("{} m", minutes);
@@ -99,22 +132,15 @@ impl ProgressBar {
             // MoveTo(0, 2),
             // PrintStyledContent(bar.clone().with(Color::Reset)),
             MoveTo(0, 3),
-            PrintStyledContent(format!("Start:   {}", self.start).with(Color::Reset)),
+            PrintStyledContent(self.format_start_time().with(Color::Reset)),
             MoveTo(0, 4),
-            PrintStyledContent(format!("End:     {}", self.end).with(Color::Reset)),
+            PrintStyledContent(self.format_end_time().with(Color::Reset)),
             MoveTo(0, 5),
-            PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
-            MoveTo(0, 6),
-            PrintStyledContent(
-                format!(
-                    "Elapsed: {:.0} % | {}",
-                    progress * 100.0,
-                    self.render_elapsed_time(None)
-                )
-                .with(Color::Reset)
-            ),
+            // PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
+            // MoveTo(0, 6),
+            PrintStyledContent(self.format_progress_and_elapsed().with(Color::Reset)),
             MoveTo(0, 7),
-            PrintStyledContent(format!("(Quit: q, ESC, or Ctrl+C)",).with(Color::Reset)),
+            PrintStyledContent(format!("(Quit: q or Ctrl+C)",).with(Color::Reset)),
         )?;
         w.flush()?;
         Ok(())

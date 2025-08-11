@@ -50,14 +50,6 @@ fn listen_exit_event(timeout: u64) -> Result<bool> {
             }) => {
                 return Ok(true);
             }
-            Event::Key(KeyEvent {
-                code: KeyCode::Esc,
-                kind: KeyEventKind::Press,
-                modifiers: _,
-                state: _,
-            }) => {
-                return Ok(true);
-            }
             _ => {}
         }
     }
