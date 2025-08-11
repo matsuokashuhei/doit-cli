@@ -19,12 +19,28 @@ Use this tool to maximize your concentration and motivation!
 
 ## Install
 
+### Via Homebrew (Recommended)
+
+```bash
+# Add the tap
+brew tap matsuokashuhei/doit
+
+# Install doit
+brew install doit
+```
+
+### Manual Installation
+
 ```bash
 git clone https://github.com/matsuokashuhei/doit.git
 cd doit
 cargo build --release
 sudo cp target/release/doit /usr/local/bin/
 ```
+
+### Pre-built Binaries
+
+Download the latest release from [GitHub Releases](https://github.com/matsuokashuhei/doit/releases)
 
 ## Usage
 
