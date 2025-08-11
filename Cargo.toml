@@ -3,7 +3,7 @@ name = "pmon"
 version = "0.2.0"
 edition = "2021"
 authors = ["Shuhei Matsuoka <matsuokashuheiii@gmail.com>"]
-description = "A CLI progress monitor (pmon) for time-based visualization"
+description = "A CLI progress monitor (justdoit) for time-based visualization"
 license = "MIT"
 repository = "https://github.com/matsuokashuhei/pmon"
 
@@ -30,5 +30,5 @@ panic = "abort"
 strip = true
 
 [[bin]]
-name = "pmon"
+name = "justdoit"
 path = "src/main.rs"
