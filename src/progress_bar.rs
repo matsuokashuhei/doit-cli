@@ -114,7 +114,7 @@ impl ProgressBar {
                 .with(Color::Reset)
             ),
             MoveTo(0, 7),
-            PrintStyledContent(format!("(Quit: q, ESC, or Ctrl+C)",).with(Color::Reset)),
+            PrintStyledContent(format!("(Quit: q or Ctrl+C)",).with(Color::Reset)),
         )?;
         w.flush()?;
         Ok(())
