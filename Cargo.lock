@@ -297,6 +297,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "doit"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "chrono",
+ "clap",
+ "colored",
+ "crossterm",
+ "predicates",
+ "regex",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -479,22 +495,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "pmon"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "chrono",
- "clap",
- "colored",
- "crossterm",
- "predicates",
- "regex",
- "tempfile",
- "thiserror",
 ]
 
 [[package]]

@@ -68,10 +68,10 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -r -s /bin/false appuser
 
 # Copy binary from builder stage
-COPY --from=builder /app/target/release/pmon /usr/local/bin/pmon
+COPY --from=builder /app/target/release/doit /usr/local/bin/doit
 
 # Change ownership
-RUN chown appuser:appuser /usr/local/bin/pmon
+RUN chown appuser:appuser /usr/local/bin/doit
 
 # Switch to app user
 USER appuser

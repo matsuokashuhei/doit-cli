@@ -20,8 +20,8 @@ A command-line tool for time-based progress visualization. Specify start and end
 
 ```bash
 # Clone the repository
-git clone https://github.com/matsuokashuhei/pmon.git
-cd pmon
+git clone https://github.com/matsuokashuhei/doit.git
+cd doit
 
 # Build and install
 cargo build --release
@@ -31,8 +31,8 @@ sudo cp target/release/doit /usr/local/bin/
 ### Build from Source
 
 ```bash
-git clone https://github.com/matsuokashuhei/pmon.git
-cd pmon
+git clone https://github.com/matsuokashuhei/doit.git
+cd doit
 cargo install --path .
 ```
 

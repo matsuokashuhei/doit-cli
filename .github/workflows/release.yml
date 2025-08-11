@@ -28,19 +28,19 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: pmon-linux-x86_64
+            artifact_name: doit-linux-x86_64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact_name: pmon-linux-aarch64
+            artifact_name: doit-linux-aarch64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: pmon-macos-x86_64
+            artifact_name: doit-macos-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: pmon-macos-aarch64
+            artifact_name: doit-macos-aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: pmon-windows-x86_64.exe
+            artifact_name: doit-windows-x86_64.exe
 
     steps:
       - name: Checkout code
@@ -81,9 +81,9 @@ jobs:
       - name: Prepare binary artifact
         run: |
           if [[ "${{ matrix.target }}" == *"windows"* ]]; then
-            cp target/${{ matrix.target }}/release/pmon.exe target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/doit.exe target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           else
-            cp target/${{ matrix.target }}/release/pmon target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/doit target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           fi
         shell: bash
 
@@ -127,27 +127,27 @@ jobs:
             Download the appropriate binary for your platform from the assets below.
 
             ### Linux
-            - `pmon-linux-x86_64` - For 64-bit Intel/AMD processors
-            - `pmon-linux-aarch64` - For 64-bit ARM processors (e.g., Raspberry Pi 4, AWS Graviton)
+            - `doit-linux-x86_64` - For 64-bit Intel/AMD processors
+            - `doit-linux-aarch64` - For 64-bit ARM processors (e.g., Raspberry Pi 4, AWS Graviton)
 
             ### macOS
-            - `pmon-macos-x86_64` - For Intel Macs
-            - `pmon-macos-aarch64` - For Apple Silicon Macs (M1, M2, etc.)
+            - `doit-macos-x86_64` - For Intel Macs
+            - `doit-macos-aarch64` - For Apple Silicon Macs (M1, M2, etc.)
 
             ### Windows
-            - `pmon-windows-x86_64.exe` - For 64-bit Windows systems
+            - `doit-windows-x86_64.exe` - For 64-bit Windows systems
 
             ## Usage
 
             After downloading, make the binary executable (Linux/macOS):
             ```bash
-            chmod +x pmon-*
-            ./pmon-* --help
+            chmod +x doit-*
+            ./doit-* --help
             ```
 
             For Windows, run directly:
             ```cmd
-            pmon-windows-x86_64.exe --help
+            doit-windows-x86_64.exe --help
             ```
           files: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           draft: false
