@@ -1,4 +1,4 @@
-# pmon - Progress Monitor
+# justdoit - Progress Monitor
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -25,7 +25,7 @@ cd pmon
 
 # Build and install
 cargo build --release
-sudo cp target/release/pmon /usr/local/bin/
+sudo cp target/release/justdoit /usr/local/bin/
 ```
 
 ### Build from Source
@@ -41,7 +41,7 @@ cargo install --path .
 ### Basic Syntax
 
 ```bash
-pmon [OPTIONS] --end <END_TIME> | --duration <DURATION>
+justdoit [OPTIONS] --end <END_TIME> | --duration <DURATION>
 ```
 
 ### Command Line Options
@@ -63,31 +63,31 @@ pmon [OPTIONS] --end <END_TIME> | --duration <DURATION>
 #### DateTime Formats
 ```bash
 # Date only (time defaults to 00:00:00 or 23:59:59)
-pmon --start "2025-08-10" --end "2025-08-11"
+justdoit --start "2025-08-10" --end "2025-08-11"
 
 # Complete datetime
-pmon --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
+justdoit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
 # ISO 8601 format
-pmon --start "2025-08-10T09:00:00" --end "2025-08-10T17:00:00"
+justdoit --start "2025-08-10T09:00:00" --end "2025-08-10T17:00:00"
 
 # With timezone
-pmon --start "2025-08-10T09:00:00+09:00" --end "2025-08-10T17:00:00+09:00"
+justdoit --start "2025-08-10T09:00:00+09:00" --end "2025-08-10T17:00:00+09:00"
 ```
 
 #### Relative Time Formats (Duration)
 ```bash
 # Seconds
-pmon --duration "30s"
+justdoit --duration "30s"
 
 # Minutes
-pmon --duration "45m"
+justdoit --duration "45m"
 
 # Hours
-pmon --duration "2h"
+justdoit --duration "2h"
 
 # Days
-pmon --duration "7d"
+justdoit --duration "7d"
 ```
 
 ### Usage Examples
@@ -95,34 +95,34 @@ pmon --duration "7d"
 #### 1. Work Session Tracking
 ```bash
 # Track an 8-hour work day
-pmon --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
+justdoit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
 # 3-hour work session from now
-pmon --duration "3h"
+justdoit --duration "3h"
 ```
 
 #### 2. Meeting Timer
 ```bash
 # 1-hour meeting with 30-second updates
-pmon --duration "1h" --interval 30
+justdoit --duration "1h" --interval 30
 
 # 2-hour meeting from specific time
-pmon --start "2025-08-10 14:00:00" --duration "2h"
+justdoit --start "2025-08-10 14:00:00" --duration "2h"
 ```
 
 #### 3. Project Deadline Tracking
 ```bash
 # Track progress to project deadline (hourly updates)
-pmon --start "2025-08-01" --end "2025-08-31" --interval 3600
+justdoit --start "2025-08-01" --end "2025-08-31" --interval 3600
 ```
 
 #### 4. Short-term Timers
 ```bash
 # Pomodoro timer (25 minutes)
-pmon --duration "25m" --interval 60
+justdoit --duration "25m" --interval 60
 
 # Short break (5 minutes)
-pmon --duration "5m" --interval 10
+justdoit --duration "5m" --interval 10
 ```
 
 ### Output Example
@@ -196,7 +196,7 @@ cargo test parse_duration
 
 ## Performance
 
-pmon is designed to be lightweight and efficient:
+justdoit is designed to be lightweight and efficient:
 
 - **Startup time**: <50ms
 - **Memory usage**: <10MB during operation
