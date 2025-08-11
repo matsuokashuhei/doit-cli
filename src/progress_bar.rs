@@ -33,13 +33,16 @@ impl ProgressBar {
     fn calculate_progress_at(&self, current: Option<NaiveDateTime>) -> f64 {
         if let Some(current) = current {
             let total_duration = self.end - self.start;
-            let elapsed_duration = self.calculate_elapsed_time(Some(current));
-            if total_duration.num_milliseconds() == 0 {
+            if total_duration.num_seconds() == 0 {
                 return 1.0;
             }
-            let progress = elapsed_duration.num_milliseconds() as f64
-                / total_duration.num_milliseconds() as f64;
-            progress.max(0.0)
+            let elapsed_duration = self.calculate_elapsed_time(Some(current));
+            if elapsed_duration > total_duration {
+                return 1.0;
+            }
+            let progress =
+                elapsed_duration.num_seconds() as f64 / total_duration.num_seconds() as f64;
+            (progress.max(0.0) * 100.0).round() / 100.0
         } else {
             self.calculate_progress_at(Some(self.current_time()))
         }
@@ -100,8 +103,8 @@ impl ProgressBar {
             MoveTo(0, 4),
             PrintStyledContent(format!("End:     {}", self.end).with(Color::Reset)),
             MoveTo(0, 5),
-            // PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
-            // MoveTo(0, 6),
+            PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
+            MoveTo(0, 6),
             PrintStyledContent(
                 format!(
                     "Elapsed: {:.0} % | {}",
@@ -115,5 +118,72 @@ impl ProgressBar {
         )?;
         w.flush()?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_progress_at() {
+        let test_cases = vec![
+            (
+                "2025-01-01 00:00:00",
+                "2025-01-10 23:59:59",
+                "2025-01-01 00:00:00",
+                0.0,
+            ),
+            (
+                "2025-01-01 00:00:00",
+                "2025-01-10 23:59:59",
+                "2025-01-06 00:00:00",
+                0.5,
+            ),
+            (
+                "2025-01-01 00:00:00",
+                "2025-01-10 23:59:59",
+                "2025-01-10 23:59:59",
+                1.0,
+            ),
+            (
+                "2025-01-01 00:00:00",
+                "2025-01-10 23:59:59",
+                "2025-01-11 00:00:00",
+                1.0,
+            ),
+            (
+                "2025-01-01 00:00:00",
+                "2025-01-10 23:59:59",
+                "2025-01-12 00:00:00",
+                1.0,
+            ),
+        ];
+        for (start, end, current, progress) in test_cases {
+            let start = NaiveDateTime::parse_from_str(start, "%Y-%m-%d %H:%M:%S").unwrap();
+            let end = NaiveDateTime::parse_from_str(end, "%Y-%m-%d %H:%M:%S").unwrap();
+            let current = NaiveDateTime::parse_from_str(current, "%Y-%m-%d %H:%M:%S").unwrap();
+            let progress_bar = ProgressBar::new(start, end);
+            assert_eq!(
+                progress_bar.calculate_progress_at(Some(current)),
+                progress,
+                "Failed for start: {}, end: {}, current: {}",
+                start,
+                end,
+                current
+            );
+        }
+    }
+
+    #[test]
+    fn test_build_bar() {
+        let test_cases = vec![
+            (0.0, "░".repeat(BAR_WIDTH)),
+            (1.0, "█".repeat(BAR_WIDTH)),
+            (0.5, "█".repeat(BAR_WIDTH / 2) + &"░".repeat(BAR_WIDTH / 2)),
+        ];
+        for (progress, expected) in test_cases {
+            assert_eq!(ProgressBar::build_bar(progress), expected);
+        }
     }
 }
