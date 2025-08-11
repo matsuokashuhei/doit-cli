@@ -107,7 +107,7 @@ fn parse_start_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(0, 0, 0).unwrap();
-        return Ok(convert_from_local(&datetime));
+        return Ok(convert_from_utc(&datetime));
     }
     Err(format!("Invalid start time format: {s}"))
 }
@@ -124,7 +124,7 @@ fn parse_end_time(s: &str) -> Result<DateTime<Local>, String> {
     }
     if let Ok(date) = parse_date(s) {
         let datetime = date.and_hms_opt(23, 59, 59).unwrap();
-        return Ok(convert_from_local(&datetime));
+        return Ok(convert_from_utc(&datetime));
     }
     Err(format!("Invalid end time format: {s}"))
 }
@@ -157,10 +157,6 @@ fn parse_datetime_as_ymd_hm(s: &str) -> Result<DateTime<Local>, String> {
         }
     }
     Err(format!("Invalid datetime format: {s}"))
-}
-
-fn convert_from_local(datetime: &NaiveDateTime) -> DateTime<Local> {
-    TimeZone::from_local_datetime(&Local, datetime).unwrap()
 }
 
 fn convert_from_utc(datetime: &NaiveDateTime) -> DateTime<Local> {
