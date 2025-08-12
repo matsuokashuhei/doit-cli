@@ -21,9 +21,8 @@ where
     enable_raw_mode()?;
     loop {
         progress_bar.render(w)?;
-        match listen_exit_event(args.interval)? {
-            true => break,
-            false => {}
+        if listen_exit_event(args.interval)? {
+            break;
         }
     }
     reset_terminal(w)?;
@@ -60,7 +59,7 @@ fn reset_terminal<W>(w: &mut W) -> Result<()>
 where
     W: Write,
 {
-    queue!(w, MoveTo(0, 7), Show)?;
+    queue!(w, MoveTo(0, 8), Show)?;
     w.flush()?;
     Ok(())
 }

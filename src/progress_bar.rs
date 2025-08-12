@@ -9,12 +9,9 @@ use crossterm::{
     cursor::{Hide, MoveTo},
     queue,
     style::{Color, PrintStyledContent, ResetColor, Stylize},
-    terminal::{Clear, ClearType},
+    terminal::{size, Clear, ClearType},
 };
 use std::io::Write;
-
-/// Fixed width for the progress bar display
-const BAR_WIDTH: usize = 60;
 
 pub struct ProgressBar {
     pub start: NaiveDateTime,
@@ -85,7 +82,7 @@ impl ProgressBar {
     }
 
     fn format_verbose_line(&self, label: &str, value: &str) -> String {
-        let spaces = " ".repeat(BAR_WIDTH - label.len() - value.len());
+        let spaces = " ".repeat(self.bar_width() - label.len() - value.len());
         format!("{label}{spaces}{value}")
     }
 
@@ -107,10 +104,10 @@ impl ProgressBar {
         }
     }
 
-    fn build_bar(progress: f64) -> String {
-        let filled_chars = (progress * BAR_WIDTH as f64).round() as usize;
+    fn build_bar(&self, progress: f64) -> String {
+        let filled_chars = (progress * self.bar_width() as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
-        let empty = "░".repeat(BAR_WIDTH - filled_chars);
+        let empty = "░".repeat(self.bar_width() - filled_chars);
         format!("{filled}{empty}")
     }
 
@@ -119,7 +116,7 @@ impl ProgressBar {
         W: Write,
     {
         let progress = self.calculate_progress_at(None);
-        let bar = Self::build_bar(progress);
+        let bar = self.build_bar(progress);
         queue!(
             w,
             ResetColor,
@@ -140,10 +137,17 @@ impl ProgressBar {
             // MoveTo(0, 6),
             PrintStyledContent(self.format_progress_and_elapsed().with(Color::Reset)),
             MoveTo(0, 7),
-            PrintStyledContent(format!("(Quit: q or Ctrl+C)",).with(Color::Reset)),
+            PrintStyledContent(
+                self.format_verbose_line("", "(Quit: q or Ctrl+c)",)
+                    .with(Color::Reset)
+            ),
         )?;
         w.flush()?;
         Ok(())
+    }
+
+    fn bar_width(&self) -> usize {
+        size().map(|(width, _)| width as usize).unwrap_or(60)
     }
 }
 
