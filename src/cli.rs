@@ -9,6 +9,7 @@ pub struct Args {
     pub end: DateTime<Local>,
     pub interval: u64,
     pub verbose: bool,
+    pub title: Option<String>,
 }
 
 impl Args {
@@ -39,6 +40,7 @@ impl Args {
             end,
             interval: matches.get_one("interval").copied().unwrap(),
             verbose: matches.get_one("verbose").copied().unwrap(),
+            title: matches.get_one::<String>("title").cloned(),
         }
     }
 }
@@ -87,6 +89,13 @@ pub fn build_command() -> Command {
                 .long("verbose")
                 .action(ArgAction::SetTrue)
                 .help("Display verbose output"),
+        )
+        .arg(
+            clap::Arg::new("title")
+                .short('t')
+                .long("title")
+                .value_parser(clap::value_parser!(String))
+                .help("Custom title for the progress session"),
         )
 }
 
@@ -551,5 +560,51 @@ mod tests {
                 "Failed for input: {input}",
             );
         }
+    }
+
+    #[test]
+    fn test_parse_with_title() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--title",
+            "My Custom Title",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.title, Some("My Custom Title".to_string()));
+    }
+
+    #[test]
+    fn test_parse_with_title_short() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "-t",
+            "Short Title",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.title, Some("Short Title".to_string()));
+    }
+
+    #[test]
+    fn test_parse_without_title() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.title, None);
     }
 }

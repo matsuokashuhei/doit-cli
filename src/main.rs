@@ -16,16 +16,17 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
-    let progress_bar = ProgressBar::new(args.start.naive_utc(), args.end.naive_utc());
+    let progress_bar = ProgressBar::new(args.start.naive_utc(), args.end.naive_utc(), args.title);
 
+    let mut row;
     enable_raw_mode()?;
     loop {
-        progress_bar.render(w)?;
+        row = progress_bar.render(w)?;
         if listen_exit_event(args.interval)? {
             break;
         }
     }
-    reset_terminal(w)?;
+    reset_terminal(w, row)?;
     disable_raw_mode()?;
     Ok(())
 }
@@ -56,11 +57,11 @@ fn listen_exit_event(timeout: u64) -> Result<bool> {
     Ok(false)
 }
 
-fn reset_terminal<W>(w: &mut W) -> Result<()>
+fn reset_terminal<W>(w: &mut W, row: u16) -> Result<()>
 where
     W: Write,
 {
-    queue!(w, MoveTo(0, 8), Show)?;
+    queue!(w, MoveTo(0, row), Show)?;
     w.flush()?;
     Ok(())
 }
