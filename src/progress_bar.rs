@@ -138,7 +138,7 @@ impl ProgressBar {
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(title.to_string().with(Color::Reset))
+                PrintStyledContent(title.to_string().with(Color::Reset).bold())
             )?;
             row += 1;
             let top_border = "━".repeat(bar_width).to_string();
