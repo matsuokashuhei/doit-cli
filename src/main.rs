@@ -16,7 +16,7 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
-    let progress_bar = ProgressBar::new(args.start.naive_utc(), args.end.naive_utc());
+    let progress_bar = ProgressBar::with_title(args.start.naive_utc(), args.end.naive_utc(), args.title);
 
     enable_raw_mode()?;
     loop {
@@ -60,7 +60,10 @@ fn reset_terminal<W>(w: &mut W) -> Result<()>
 where
     W: Write,
 {
-    queue!(w, MoveTo(0, 8), Show)?;
+    // The new layout has title(optional) + progress bar + 5 rows for box + quit message
+    // With title: 1 + 1 + 5 + 1 = 8 rows
+    // Without title: 0 + 1 + 5 + 1 = 7 rows  
+    queue!(w, MoveTo(0, 9), Show)?;
     w.flush()?;
     Ok(())
 }

@@ -16,12 +16,18 @@ use std::io::Write;
 pub struct ProgressBar {
     pub start: NaiveDateTime,
     pub end: NaiveDateTime,
+    pub title: Option<String>,
 }
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
     pub fn new(start: NaiveDateTime, end: NaiveDateTime) -> Self {
-        ProgressBar { start, end }
+        ProgressBar { start, end, title: None }
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    pub fn with_title(start: NaiveDateTime, end: NaiveDateTime, title: Option<String>) -> Self {
+        ProgressBar { start, end, title }
     }
 
     fn current_time() -> NaiveDateTime {
@@ -55,16 +61,16 @@ impl ProgressBar {
         }
     }
 
-    fn format_start_time(&self) -> String {
+    fn format_start_time_for_box(&self) -> String {
         let label = "Start:";
         let value = self.start.format("%Y-%m-%d %H:%M:%S").to_string();
-        Self::format_verbose_line(label, &value)
+        Self::format_box_line(label, &value)
     }
 
-    fn format_end_time(&self) -> String {
+    fn format_end_time_for_box(&self) -> String {
         let label = "End:";
         let value = self.end.format("%Y-%m-%d %H:%M:%S").to_string();
-        Self::format_verbose_line(label, &value)
+        Self::format_box_line(label, &value)
     }
 
     fn format_progress(&self, current: NaiveDateTime) -> String {
@@ -72,7 +78,7 @@ impl ProgressBar {
         format!("{progress:.0} %")
     }
 
-    fn format_progress_and_elapsed(&self) -> String {
+    fn format_progress_and_elapsed_for_box(&self) -> String {
         let current_time = Self::current_time();
         let label = "Elapsed:";
         let value = format!(
@@ -80,11 +86,13 @@ impl ProgressBar {
             self.format_progress(current_time),
             self.format_elapsed_time(current_time)
         );
-        Self::format_verbose_line(label, &value)
+        Self::format_box_line(label, &value)
     }
 
-    fn format_verbose_line(label: &str, value: &str) -> String {
-        let spaces = " ".repeat(Self::bar_width() - label.len() - value.len());
+    fn format_box_line(label: &str, value: &str) -> String {
+        // Account for borders (subtract 4 for "┃ " and " ┃")
+        let available_width = Self::bar_width().saturating_sub(4);
+        let spaces = " ".repeat(available_width.saturating_sub(label.len() + value.len()));
         format!("{label}{spaces}{value}")
     }
 
@@ -123,30 +131,58 @@ impl ProgressBar {
     {
         let progress = self.calculate_progress_at(None);
         let bar = ProgressBar::build_bar(progress);
-        queue!(
-            w,
-            ResetColor,
-            Clear(ClearType::All),
-            Hide,
-            MoveTo(0, 0),
-            PrintStyledContent(bar.clone().with(Color::Reset)),
-            MoveTo(0, 1),
-            PrintStyledContent(bar.clone().with(Color::Reset)),
-            // MoveTo(0, 2),
-            // PrintStyledContent(bar.clone().with(Color::Reset)),
-            MoveTo(0, 3),
-            PrintStyledContent(self.format_start_time().with(Color::Reset)),
-            MoveTo(0, 4),
-            PrintStyledContent(self.format_end_time().with(Color::Reset)),
-            MoveTo(0, 5),
-            // PrintStyledContent(format!("Current: {}", self.current_time()).with(Color::Reset)),
-            // MoveTo(0, 6),
-            PrintStyledContent(self.format_progress_and_elapsed().with(Color::Reset)),
-            MoveTo(0, 7),
-            PrintStyledContent(
-                Self::format_verbose_line("", "(Quit: q or Ctrl+c)",).with(Color::Reset)
-            ),
-        )?;
+        let bar_width = ProgressBar::bar_width();
+        
+        // Clear screen and reset cursor
+        queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
+        
+        let mut row = 0;
+        
+        // Display title if provided
+        if let Some(title) = &self.title {
+            queue!(w, MoveTo(0, row), PrintStyledContent(format!("\"{title}\"").with(Color::Reset)))?;
+            row += 1;
+        }
+        
+        // Display progress bar
+        queue!(w, MoveTo(0, row), PrintStyledContent(bar.with(Color::Reset)))?;
+        row += 1;
+        
+        // Draw bordered box
+        let top_border = format!("┏{}┓", "━".repeat(bar_width.saturating_sub(2)));
+        queue!(w, MoveTo(0, row), PrintStyledContent(top_border.with(Color::Reset)))?;
+        row += 1;
+        
+        // Start time row
+        let start_line = format!("┃ {} ┃", self.format_start_time_for_box());
+        queue!(w, MoveTo(0, row), PrintStyledContent(start_line.with(Color::Reset)))?;
+        row += 1;
+        
+        // End time row
+        let end_line = format!("┃ {} ┃", self.format_end_time_for_box());
+        queue!(w, MoveTo(0, row), PrintStyledContent(end_line.with(Color::Reset)))?;
+        row += 1;
+        
+        // Middle separator
+        let middle_border = format!("┠{}┨", "─".repeat(bar_width.saturating_sub(2)));
+        queue!(w, MoveTo(0, row), PrintStyledContent(middle_border.with(Color::Reset)))?;
+        row += 1;
+        
+        // Elapsed time row
+        let elapsed_line = format!("┃ {} ┃", self.format_progress_and_elapsed_for_box());
+        queue!(w, MoveTo(0, row), PrintStyledContent(elapsed_line.with(Color::Reset)))?;
+        row += 1;
+        
+        // Bottom border
+        let bottom_border = format!("┗{}┛", "━".repeat(bar_width.saturating_sub(2)));
+        queue!(w, MoveTo(0, row), PrintStyledContent(bottom_border.with(Color::Reset)))?;
+        row += 1;
+        
+        // Quit instructions (right-aligned, below the box)
+        let quit_text = "(Quit: q or Ctrl+c)";
+        let quit_padding = " ".repeat(bar_width.saturating_sub(quit_text.len()));
+        queue!(w, MoveTo(0, row), PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset)))?;
+        
         w.flush()?;
         Ok(())
     }
