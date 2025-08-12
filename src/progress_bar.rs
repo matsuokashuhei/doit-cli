@@ -21,12 +21,7 @@ pub struct ProgressBar {
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
-    pub fn new(start: NaiveDateTime, end: NaiveDateTime) -> Self {
-        ProgressBar { start, end, title: None }
-    }
-
-    #[allow(clippy::must_use_candidate)]
-    pub fn with_title(start: NaiveDateTime, end: NaiveDateTime, title: Option<String>) -> Self {
+    pub fn new(start: NaiveDateTime, end: NaiveDateTime, title: Option<String>) -> Self {
         ProgressBar { start, end, title }
     }
 
@@ -125,66 +120,111 @@ impl ProgressBar {
     }
 
     #[allow(clippy::missing_errors_doc)]
-    pub fn render<W>(&self, w: &mut W) -> Result<()>
+    pub fn render<W>(&self, w: &mut W) -> Result<u16>
     where
         W: Write,
     {
         let progress = self.calculate_progress_at(None);
         let bar = ProgressBar::build_bar(progress);
         let bar_width = ProgressBar::bar_width();
-        
+
         // Clear screen and reset cursor
         queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
-        
+
         let mut row = 0;
-        
+
         // Display title if provided
         if let Some(title) = &self.title {
-            queue!(w, MoveTo(0, row), PrintStyledContent(format!("\"{title}\"").with(Color::Reset)))?;
+            queue!(
+                w,
+                MoveTo(0, row),
+                PrintStyledContent(title.to_string().with(Color::Reset))
+            )?;
+            row += 1;
+            let top_border = "━".repeat(bar_width).to_string();
+            queue!(
+                w,
+                MoveTo(0, row),
+                PrintStyledContent(top_border.with(Color::Reset))
+            )?;
             row += 1;
         }
-        
+
         // Display progress bar
-        queue!(w, MoveTo(0, row), PrintStyledContent(bar.with(Color::Reset)))?;
-        row += 1;
-        
+        for _ in 0..3 {
+            queue!(
+                w,
+                MoveTo(0, row),
+                PrintStyledContent(bar.clone().with(Color::Reset))
+            )?;
+            row += 1;
+        }
+
         // Draw bordered box
         let top_border = format!("┏{}┓", "━".repeat(bar_width.saturating_sub(2)));
-        queue!(w, MoveTo(0, row), PrintStyledContent(top_border.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(top_border.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // Start time row
         let start_line = format!("┃ {} ┃", self.format_start_time_for_box());
-        queue!(w, MoveTo(0, row), PrintStyledContent(start_line.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(start_line.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // End time row
         let end_line = format!("┃ {} ┃", self.format_end_time_for_box());
-        queue!(w, MoveTo(0, row), PrintStyledContent(end_line.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(end_line.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // Middle separator
         let middle_border = format!("┠{}┨", "─".repeat(bar_width.saturating_sub(2)));
-        queue!(w, MoveTo(0, row), PrintStyledContent(middle_border.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(middle_border.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // Elapsed time row
         let elapsed_line = format!("┃ {} ┃", self.format_progress_and_elapsed_for_box());
-        queue!(w, MoveTo(0, row), PrintStyledContent(elapsed_line.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(elapsed_line.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // Bottom border
         let bottom_border = format!("┗{}┛", "━".repeat(bar_width.saturating_sub(2)));
-        queue!(w, MoveTo(0, row), PrintStyledContent(bottom_border.with(Color::Reset)))?;
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(bottom_border.with(Color::Reset))
+        )?;
         row += 1;
-        
+
         // Quit instructions (right-aligned, below the box)
-        let quit_text = "(Quit: q or Ctrl+c)";
+        let quit_text = "( Quit: q or Ctrl+c )";
         let quit_padding = " ".repeat(bar_width.saturating_sub(quit_text.len()));
-        queue!(w, MoveTo(0, row), PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset)))?;
-        
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset))
+        )?;
+
         w.flush()?;
-        Ok(())
+        Ok(row)
     }
 
     fn bar_width() -> usize {
@@ -235,7 +275,7 @@ mod tests {
             let start = NaiveDateTime::parse_from_str(start, "%Y-%m-%d %H:%M:%S").unwrap();
             let end = NaiveDateTime::parse_from_str(end, "%Y-%m-%d %H:%M:%S").unwrap();
             let current = NaiveDateTime::parse_from_str(current, "%Y-%m-%d %H:%M:%S").unwrap();
-            let progress_bar = ProgressBar::new(start, end);
+            let progress_bar = ProgressBar::new(start, end, None);
             assert_eq!(
                 progress_bar.calculate_progress_at(Some(current)),
                 progress,
