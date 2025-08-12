@@ -1,6 +1,6 @@
 [package]
 name = "doit"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Shuhei Matsuoka <matsuokashuheiii@gmail.com>"]
 description = "A CLI progress monitor (doit) for time-based visualization"
@@ -8,12 +8,12 @@ license = "MIT"
 repository = "https://github.com/matsuokashuhei/doit"
 
 [dependencies]
-clap = { version = "4.5.43", features = ["derive", "string"] }
+clap = { version = "4.5.44", features = ["derive", "string"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 colored = "3.0.0"
 crossterm = "0.29.0"
-anyhow = "1.0.98"
-thiserror = "2.0.12"
+anyhow = "1.0.99"
+thiserror = "2.0.14"
 regex = "1.11.1"
 
 [dev-dependencies]
