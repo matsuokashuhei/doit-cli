@@ -12,15 +12,18 @@ pub struct Args {
 }
 
 impl Args {
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
+    #[allow(clippy::needless_pass_by_value)]
     pub fn parse(matches: ArgMatches) -> Self {
         let start = matches
             .get_one::<DateTime<Local>>("start")
-            .cloned()
+            .copied()
             .unwrap();
         let end = matches
             .get_one::<DateTime<Local>>("end")
-            .cloned()
-            .unwrap_or_else(|| start + matches.get_one::<Duration>("duration").cloned().unwrap());
+            .copied()
+            .unwrap_or_else(|| start + matches.get_one::<Duration>("duration").copied().unwrap());
 
         if end < start {
             println!(
@@ -34,8 +37,8 @@ impl Args {
         Args {
             start,
             end,
-            interval: matches.get_one("interval").cloned().unwrap(),
-            verbose: matches.get_one("verbose").cloned().unwrap(),
+            interval: matches.get_one("interval").copied().unwrap(),
+            verbose: matches.get_one("verbose").copied().unwrap(),
         }
     }
 }
@@ -128,7 +131,7 @@ fn parse_datetime_as_ymd_hmsz(s: &str) -> Result<DateTime<Local>, String> {
             return Ok(convert_from_utc(&datetime));
         }
     }
-    Err(format!("Invalid datetime format: {}", s))
+    Err(format!("Invalid datetime format: {s}"))
 }
 
 fn parse_datetime_as_ymd_hms(s: &str) -> Result<DateTime<Local>, String> {
@@ -162,7 +165,7 @@ fn parse_date(s: &str) -> Result<NaiveDate, String> {
             return Ok(date);
         }
     }
-    Err(format!("Invalid date format: {}", s))
+    Err(format!("Invalid date format: {s}"))
 }
 
 fn parse_duration(s: &str) -> Result<Duration, String> {
@@ -170,7 +173,7 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
     if let Some(caps) = re.captures(s) {
         let value = caps[1]
             .parse::<i64>()
-            .map_err(|_| format!("Invalid duration value: {}", s))?;
+            .map_err(|_| format!("Invalid duration value: {s}"))?;
         let unit = &caps[2];
         match unit {
             "s" => return Ok(Duration::seconds(value)),
@@ -180,7 +183,7 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
             _ => {}
         }
     }
-    Err(format!("Invalid duration format: {}", s))
+    Err(format!("Invalid duration format: {s}"))
 }
 
 #[cfg(test)]
@@ -338,7 +341,7 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.verbose, true);
+        assert!(args.verbose);
     }
 
     #[test]
@@ -352,7 +355,7 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.verbose, false);
+        assert!(!args.verbose);
     }
 
     #[test]
@@ -435,7 +438,7 @@ mod tests {
         ];
         for input in test_cases {
             let result = parse_start_time(input);
-            assert!(result.is_err(), "Failed to parse start time: {}", input);
+            assert!(result.is_err(), "Failed to parse start time: {input}");
         }
     }
 
@@ -519,7 +522,7 @@ mod tests {
         ];
         for input in test_cases {
             let result = parse_end_time(input);
-            assert!(result.is_err(), "Failed to parse start time: {}", input);
+            assert!(result.is_err(), "Failed to parse start time: {input}");
         }
     }
 
@@ -545,8 +548,7 @@ mod tests {
             assert_eq!(
                 local_datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
                 expected,
-                "Failed for input: {}",
-                input
+                "Failed for input: {input}",
             );
         }
     }

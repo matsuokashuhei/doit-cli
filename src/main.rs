@@ -30,6 +30,7 @@ where
     Ok(())
 }
 
+#[allow(clippy::match_same_arms)]
 fn listen_exit_event(timeout: u64) -> Result<bool> {
     if poll(Duration::from_secs(timeout))? {
         match read()? {
