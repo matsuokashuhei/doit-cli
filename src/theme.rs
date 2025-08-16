@@ -88,10 +88,10 @@ impl RenderContext {
         let total_hours = total_duration.num_hours();
         let total_days = total_duration.num_days();
 
-        if total_minutes <= 60 {
+        if total_minutes < 60 {
             // Within 1 hour: show only minutes
             format!("{}m", total_minutes)
-        } else if total_hours <= 24 {
+        } else if total_hours < 24 {
             // Within 24 hours: show hours and minutes
             let hours = total_hours;
             let minutes = total_minutes % 60;
@@ -120,6 +120,7 @@ impl RenderContext {
             }
         }
     }
+
     pub fn calculate_elapsed_time(&self) -> TimeDelta {
         if self.current_time < self.start {
             // Before the start time: no time elapsed
@@ -786,7 +787,7 @@ mod tests {
             NaiveDateTime::parse_from_str("2025-08-16 11:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let context = RenderContext::new(start, end, None, start, 0.0);
 
-        assert_eq!(context.format_total_time(), "60m");
+        assert_eq!(context.format_total_time(), "1h");
     }
 
     #[test]
@@ -840,17 +841,6 @@ mod tests {
 
         assert_eq!(context.format_elapsed_time(), "10 m");
         assert_eq!(context.format_remaining_time(), "20 m");
-    }
-
-    #[test]
-    fn test_format_total_time_exactly_60m() {
-        let start =
-            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-        let end =
-            NaiveDateTime::parse_from_str("2025-08-16 11:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-        let context = RenderContext::new(start, end, None, start, 0.0);
-
-        assert_eq!(context.format_total_time(), "60m");
     }
 
     #[test]
