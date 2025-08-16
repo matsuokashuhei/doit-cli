@@ -119,7 +119,6 @@ impl Theme for DefaultTheme {
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
         let bar = self.build_bar(context.progress);
-        let bar_width = context.bar_width;
 
         // Clear screen and reset cursor
         queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
@@ -131,88 +130,57 @@ impl Theme for DefaultTheme {
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(title.to_string().with(Color::Reset).bold())
-            )?;
-            row += 1;
-            let top_border = "━".repeat(bar_width).to_string();
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(top_border.with(Color::Reset))
+                PrintStyledContent(title.to_string().with(Color::Reset))
             )?;
             row += 1;
         }
 
-        // Display progress bar
-        for _ in 0..3 {
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(bar.clone().with(Color::Reset))
-            )?;
-            row += 1;
-        }
+        // Time range, percentage, and duration info
+        let start_time = context.start.format("%Y-%m-%d %H:%M");
+        let end_time = context.end.format("%Y-%m-%d %H:%M");
+        let progress_percent = (context.progress * 100.0) as i32;
+        let elapsed_time = context.format_elapsed_time();
+        let total_duration = context.end - context.start;
+        let total_hours = total_duration.num_hours();
+        let total_minutes = total_duration.num_minutes() % 60;
+        let total_time = if total_hours > 0 {
+            format!("{}h {}m", total_hours, total_minutes)
+        } else {
+            format!("{}m", total_minutes)
+        };
 
-        // Draw bordered box
-        let top_border = format!("┏{}┓", "━".repeat(bar_width.saturating_sub(2)));
+        let info_line = format!(
+            "{} → {}   |   {}%   |   {} / {}",
+            start_time, end_time, progress_percent, elapsed_time, total_time
+        );
         queue!(
             w,
             MoveTo(0, row),
-            PrintStyledContent(top_border.with(Color::Reset))
+            PrintStyledContent(info_line.with(Color::Reset))
         )?;
         row += 1;
 
-        // Start time row
-        let start_line = format!("┃ {} ┃", self.format_start_time_for_box(context));
+        // Empty line
+        row += 1;
+
+        // Progress bar
         queue!(
             w,
             MoveTo(0, row),
-            PrintStyledContent(start_line.with(Color::Reset))
+            PrintStyledContent(bar.with(Color::Reset))
         )?;
         row += 1;
 
-        // End time row
-        let end_line = format!("┃ {} ┃", self.format_end_time_for_box(context));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(end_line.with(Color::Reset))
-        )?;
+        // Empty line
         row += 1;
 
-        // Middle separator
-        let middle_border = format!("┠{}┨", "─".repeat(bar_width.saturating_sub(2)));
+        // Remaining time
+        let remaining_time = context.format_remaining_time();
+        let remaining_line = format!("{} remaining", remaining_time);
         queue!(
             w,
             MoveTo(0, row),
-            PrintStyledContent(middle_border.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Elapsed time row
-        let elapsed_line = format!("┃ {} ┃", self.format_progress_and_elapsed_for_box(context));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(elapsed_line.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Bottom border
-        let bottom_border = format!("┗{}┛", "━".repeat(bar_width.saturating_sub(2)));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(bottom_border.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Quit instructions (left-aligned, below the box)
-        let quit_text = "( Quit: q or Ctrl+c )";
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(quit_text.with(Color::Reset))
+            PrintStyledContent(remaining_line.with(Color::Reset))
         )?;
 
         w.flush()?;
@@ -227,32 +195,6 @@ impl DefaultTheme {
         let filled = "█".repeat(filled_chars);
         let empty = "░".repeat(bar_width.saturating_sub(filled_chars));
         format!("{filled}{empty}")
-    }
-
-    fn format_start_time_for_box(&self, context: &RenderContext) -> String {
-        let label = "Start:";
-        let value = context.start.format("%Y-%m-%d %H:%M").to_string();
-        self.format_box_line(label, &value, context.bar_width)
-    }
-
-    fn format_end_time_for_box(&self, context: &RenderContext) -> String {
-        let label = "End:";
-        let value = context.end.format("%Y-%m-%d %H:%M").to_string();
-        self.format_box_line(label, &value, context.bar_width)
-    }
-
-    fn format_progress_and_elapsed_for_box(&self, context: &RenderContext) -> String {
-        let label = "Elapsed:";
-        let progress_percent = (context.progress * 100.0) as i32;
-        let value = format!("{}% | {}", progress_percent, context.format_elapsed_time());
-        self.format_box_line(label, &value, context.bar_width)
-    }
-
-    fn format_box_line(&self, label: &str, value: &str, bar_width: usize) -> String {
-        // Account for borders (subtract 4 for "┃ " and " ┃")
-        let available_width = bar_width.saturating_sub(4);
-        let spaces = " ".repeat(available_width.saturating_sub(label.len() + value.len()));
-        format!("{label}{spaces}{value}")
     }
 }
 
