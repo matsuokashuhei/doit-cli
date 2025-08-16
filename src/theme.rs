@@ -67,6 +67,16 @@ impl RenderContext {
         self.end.format(self.get_time_format()).to_string()
     }
 
+    /// Format start time for retro theme (always full datetime)
+    pub fn format_start_time_retro(&self) -> String {
+        self.start.format("%Y-%m-%d %H:%M:%S").to_string()
+    }
+
+    /// Format end time for retro theme (always full datetime)
+    pub fn format_end_time_retro(&self) -> String {
+        self.end.format("%Y-%m-%d %H:%M:%S").to_string()
+    }
+
     /// Format total duration according to its length
     /// - Within 1 hour: "m"
     /// - Within 24 hours: "h m"
@@ -105,15 +115,28 @@ impl RenderContext {
         }
     }
     pub fn calculate_elapsed_time(&self) -> TimeDelta {
-        self.current_time - self.start
+        if self.current_time < self.start {
+            // Before the start time: no time elapsed
+            TimeDelta::zero()
+        } else if self.current_time > self.end {
+            // After the end time: full duration elapsed
+            self.end - self.start
+        } else {
+            // During the period: current - start
+            self.current_time - self.start
+        }
     }
 
     pub fn calculate_remaining_time(&self) -> TimeDelta {
-        let remaining = self.end - self.current_time;
-        if remaining.num_seconds() < 0 {
+        if self.current_time < self.start {
+            // Before the start time: full duration remaining
+            self.end - self.start
+        } else if self.current_time > self.end {
+            // After the end time: no time remaining
             TimeDelta::zero()
         } else {
-            remaining
+            // During the period: end - current
+            self.end - self.current_time
         }
     }
 
@@ -292,7 +315,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // Start time
-        let start_line = format!("[START]     {}", context.format_start_time());
+        let start_line = format!("[START]     {}", context.format_start_time_retro());
         queue!(
             w,
             MoveTo(0, row),
@@ -301,7 +324,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // End time
-        let end_line = format!("[END]       {}", context.format_end_time());
+        let end_line = format!("[END]       {}", context.format_end_time_retro());
         queue!(
             w,
             MoveTo(0, row),
@@ -749,6 +772,48 @@ mod tests {
     }
 
     #[test]
+    fn test_elapsed_time_before_start() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 14:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 14:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-08-16 13:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, current, 0.0);
+
+        assert_eq!(context.format_elapsed_time(), "0 m");
+        assert_eq!(context.format_remaining_time(), "30 m");
+    }
+
+    #[test]
+    fn test_elapsed_time_after_end() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 14:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 14:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-08-16 15:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, current, 0.0);
+
+        assert_eq!(context.format_elapsed_time(), "30 m");
+        assert_eq!(context.format_remaining_time(), "0 m");
+    }
+
+    #[test]
+    fn test_elapsed_time_during_period() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 14:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 14:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-08-16 14:10:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, current, 0.0);
+
+        assert_eq!(context.format_elapsed_time(), "10 m");
+        assert_eq!(context.format_remaining_time(), "20 m");
+    }
+
+    #[test]
     fn test_format_total_time_exactly_1h() {
         let start =
             NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
@@ -757,5 +822,22 @@ mod tests {
         let context = RenderContext::new(start, end, None, start, 0.0);
 
         assert_eq!(context.format_total_time(), "1h");
+    }
+
+    #[test]
+    fn test_retro_time_format() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        // Retro theme should always use full YYYY-mm-dd HH:MM:SS format
+        assert_eq!(context.format_start_time_retro(), "2025-08-16 10:00:00");
+        assert_eq!(context.format_end_time_retro(), "2025-08-16 18:00:00");
+
+        // While regular format should be dynamic (within 24h = HH:MM)
+        assert_eq!(context.format_start_time(), "10:00");
+        assert_eq!(context.format_end_time(), "18:00");
     }
 }
