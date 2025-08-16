@@ -11,5 +11,5 @@ pub mod theme;
 pub use cli::{build_command, Args};
 pub use progress_bar::ProgressBar;
 pub use theme::{
-    CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
+    DefaultTheme, RenderContext, RetroTheme, SynthwaveTheme, Theme, ThemeRegistry, ThemeType,
 };

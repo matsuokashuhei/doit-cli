@@ -99,7 +99,7 @@ pub fn get_terminal_width() -> usize {
 pub enum ThemeType {
     Default,
     Retro,
-    Cyberpunk,
+    Synthwave,
 }
 
 /// Base trait for all themes
@@ -362,48 +362,59 @@ impl RetroTheme {
     }
 }
 
-/// Cyberpunk theme implementation
-pub struct CyberpunkTheme;
+/// Synthwave theme implementation
+pub struct SynthwaveTheme;
 
-impl Theme for CyberpunkTheme {
+impl Theme for SynthwaveTheme {
     fn name(&self) -> &'static str {
-        "cyberpunk"
+        "synthwave"
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
         let bar_width = get_terminal_width();
 
-        // Clear screen, set background color, and reset cursor
+        // #35324c
         let bg_color = Color::Rgb {
-            r: 33,
-            g: 11,
-            b: 75,
-        }; // Violet #210B4B
+            r: 59,
+            g: 50,
+            b: 85,
+        };
+        //  #30c0b7
         let frame_color = Color::Rgb {
-            r: 106,
-            g: 42,
-            b: 152,
-        }; // Daisy Bush #6A2A98
+            // r: 48,
+            // g: 192,
+            // b: 183,
+            r: 73,
+            g: 128,
+            b: 153,
+        };
+        // #ee227d
         let progress_color = Color::Rgb {
-            r: 255,
-            g: 61,
-            b: 148,
-        }; // Wild Strawberry #FF3D94
+            r: 238,
+            g: 34,
+            b: 125,
+        };
+        // #498099
         let text_color = Color::Rgb {
-            r: 181,
-            g: 48,
-            b: 126,
-        }; // Medium Red Violet #B5307E
+            // r: 73,
+            // g: 128,
+            // b: 153,
+            r: 48,
+            g: 192,
+            b: 183,
+        };
+        // #30c0b7
         let title_accent_color = Color::Rgb {
-            r: 0,
-            g: 206,
-            b: 209,
-        }; // Bright Cyan #00CED1
+            r: 48,
+            g: 192,
+            b: 183,
+        };
+        // #fd8083
         let message_accent_color = Color::Rgb {
-            r: 0,
-            g: 206,
-            b: 209,
-        }; // Bright Cyan #00CED1
+            r: 253,
+            g: 128,
+            b: 131,
+        };
         queue!(
             w,
             ResetColor,
@@ -414,9 +425,15 @@ impl Theme for CyberpunkTheme {
 
         let mut row = 0;
 
-        // Title with cyberpunk styling
+        // Title with synthwave styling
         if let Some(title) = &context.title {
-            let title_line = format!("[{}]", title.to_uppercase());
+            let title_line = format!(
+                " {} {} {}",
+                "═".with(frame_color),
+                title.to_uppercase().with(title_accent_color),
+                "═".with(frame_color)
+            );
+
             queue!(
                 w,
                 MoveTo(0, row),
@@ -445,7 +462,7 @@ impl Theme for CyberpunkTheme {
         let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
 
         // Create the progress bar with the correct width
-        let bar = CyberpunkTheme::build_cyberpunk_bar(context.progress, bar_inner_width);
+        let bar = SynthwaveTheme::build_synthwave_bar(context.progress, bar_inner_width);
 
         // The bar is already the correct width, no need to adjust
         let adjusted_bar = bar;
@@ -454,11 +471,11 @@ impl Theme for CyberpunkTheme {
             w,
             MoveTo(0, row),
             PrintStyledContent("║ ".with(frame_color).on(bg_color)),
-            PrintStyledContent(start_time.with(text_color).on(bg_color).bold()),
+            PrintStyledContent(start_time.with(text_color).on(bg_color)),
             PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
             PrintStyledContent(adjusted_bar.with(progress_color).on(bg_color)),
             PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
-            PrintStyledContent(end_time.with(text_color).on(bg_color).bold()),
+            PrintStyledContent(end_time.with(text_color).on(bg_color)),
             PrintStyledContent(" ║".with(frame_color).on(bg_color))
         )?;
         row += 1;
@@ -483,7 +500,7 @@ impl Theme for CyberpunkTheme {
             w,
             MoveTo(0, row),
             PrintStyledContent(fixed_prefix.with(frame_color).on(bg_color)),
-            PrintStyledContent(info_text.with(text_color).on(bg_color).bold()),
+            PrintStyledContent(info_text.with(text_color).on(bg_color)),
             PrintStyledContent(padding.with(Color::Reset).on(bg_color)),
             PrintStyledContent(fixed_suffix.with(frame_color).on(bg_color))
         )?;
@@ -498,9 +515,9 @@ impl Theme for CyberpunkTheme {
         )?;
         row += 1;
 
-        // Cyberpunk motivation message
+        // Synthwave motivation message
         let lightning1 = "⚡";
-        let message = " KEEP THE ENERGY FLOWING — CYBER MINDSET ";
+        let message = " KEEP THE ENERGY FLOWING ";
         let lightning2 = "⚡";
         let full_message = format!("{}{}{}", lightning1, message, lightning2);
         let motivation_padding = " ".repeat((bar_width.saturating_sub(full_message.len())) / 2);
@@ -518,8 +535,8 @@ impl Theme for CyberpunkTheme {
     }
 }
 
-impl CyberpunkTheme {
-    fn build_cyberpunk_bar(progress: f64, available_width: usize) -> String {
+impl SynthwaveTheme {
+    fn build_synthwave_bar(progress: f64, available_width: usize) -> String {
         let filled_chars = (progress * available_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
         let empty = "░".repeat(available_width.saturating_sub(filled_chars));
@@ -539,7 +556,7 @@ impl ThemeRegistry {
         };
         registry.register("default", ThemeType::Default);
         registry.register("retro", ThemeType::Retro);
-        registry.register("cyberpunk", ThemeType::Cyberpunk);
+        registry.register("synthwave", ThemeType::Synthwave);
         registry
     }
 

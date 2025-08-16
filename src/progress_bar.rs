@@ -4,7 +4,7 @@
 //! for time-based progress visualization with color support.
 
 use crate::theme::{
-    CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
+    DefaultTheme, RenderContext, RetroTheme, SynthwaveTheme, Theme, ThemeRegistry, ThemeType,
 };
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime, Timelike};
@@ -84,8 +84,8 @@ impl ProgressBar {
                 let theme = RetroTheme;
                 theme.render(&context, w)
             }
-            ThemeType::Cyberpunk => {
-                let theme = CyberpunkTheme;
+            ThemeType::Synthwave => {
+                let theme = SynthwaveTheme;
                 theme.render(&context, w)
             }
         }
