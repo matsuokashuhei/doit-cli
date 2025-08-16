@@ -1,7 +1,13 @@
 use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
-use clap::{ArgAction, ArgMatches, Command};
+use clap::{ArgAction, ArgMatches, Command, ValueEnum};
 use regex::Regex;
 use std::process::exit;
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
+pub enum Theme {
+    Default,
+    Retro,
+}
 
 #[derive(Debug)]
 pub struct Args {
@@ -10,6 +16,7 @@ pub struct Args {
     pub interval: u64,
     pub verbose: bool,
     pub title: Option<String>,
+    pub theme: Theme,
 }
 
 impl Args {
@@ -41,6 +48,7 @@ impl Args {
             interval: matches.get_one("interval").copied().unwrap(),
             verbose: matches.get_one("verbose").copied().unwrap(),
             title: matches.get_one::<String>("title").cloned(),
+            theme: matches.get_one::<Theme>("theme").copied().unwrap_or(Theme::Default),
         }
     }
 }
@@ -96,6 +104,13 @@ pub fn build_command() -> Command {
                 .long("title")
                 .value_parser(clap::value_parser!(String))
                 .help("Custom title for the progress session"),
+        )
+        .arg(
+            clap::Arg::new("theme")
+                .long("theme")
+                .value_parser(clap::value_parser!(Theme))
+                .default_value("default")
+                .help("Theme for the progress display (default, retro)"),
         )
 }
 
@@ -606,5 +621,38 @@ mod tests {
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.title, None);
+        assert_eq!(args.theme, Theme::Default);
+    }
+
+    #[test]
+    fn test_parse_with_retro_theme() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--theme",
+            "retro",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.theme, Theme::Retro);
+    }
+
+    #[test]
+    fn test_parse_with_default_theme() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--theme",
+            "default",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.theme, Theme::Default);
     }
 }

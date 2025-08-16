@@ -32,6 +32,7 @@ Just Do It!
 - 🔄 Real-time updates
 - 🎨 Colored output with decorative borders
 - 📝 Custom title support for progress sessions
+- 🎭 Multiple themes (default, retro)
 - 🖥️ Cross-platform (Linux/macOS/Windows)
 
 ## Install
@@ -71,6 +72,9 @@ doit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 # Add a custom title to your progress session
 doit --start "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
 
+# Use retro theme for military-style motivation
+doit --start "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --theme retro
+
 # Short form options
 doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
 ```
@@ -81,6 +85,7 @@ doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
 - `--end` / `-e` End time
 - `--duration` / `-d` Duration (e.g. `25m`, `2h`)
 - `--title` / `-t` Custom title for the progress session
+- `--theme` Theme for the progress display (default, retro)
 - `--interval` / `-i` Update interval (seconds)
 - `--verbose` / `-v` Display verbose output
 
@@ -116,6 +121,24 @@ Just Do It!
 ┃ Elapsed:                                            92 % | 8 h 14 m ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
                                                     (Quit: q or Ctrl+c)
+```
+
+### Retro Theme Example
+
+```
+[JUST DO IT!] FOCUS SESSION INITIATED
+============================================================
+[START]     2025-08-12 08:00:00
+[END]       2025-08-12 17:00:00
+[ELAPSED]   92% | 8h 14m
+[REMAINING] 00h 46m
+
+[PROGRESS]
+[███████████████████████████████████████████████████░░░░░░░]
+============================================================
+STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
+============================================================
+(Q) QUIT | (CTRL+C) ABORT
 ```
 
 ## Development & Testing

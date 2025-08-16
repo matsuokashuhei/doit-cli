@@ -7,5 +7,5 @@ pub mod cli;
 pub mod progress_bar;
 
 // Re-export commonly used types
-pub use cli::{build_command, Args};
+pub use cli::{build_command, Args, Theme};
 pub use progress_bar::ProgressBar;
