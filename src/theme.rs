@@ -439,13 +439,28 @@ impl Theme for CyberpunkTheme {
         // Progress bar line with time labels
         let start_time = context.start.format("%Y-%m-%d %H:%M").to_string();
         let end_time = context.end.format("%Y-%m-%d %H:%M").to_string();
+
+        // Calculate the exact width needed to match border lines
+        let fixed_parts_width =
+            "║ ".len() + start_time.len() + "  ".len() + "  ".len() + end_time.len() + " ║".len();
+        let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
+        let adjusted_bar = if bar.len() > bar_inner_width {
+            bar.chars().take(bar_inner_width).collect::<String>()
+        } else {
+            format!(
+                "{}{}",
+                bar,
+                " ".repeat(bar_inner_width.saturating_sub(bar.len()))
+            )
+        };
+
         queue!(
             w,
             MoveTo(0, row),
             PrintStyledContent("║ ".with(frame_color).on(bg_color)),
             PrintStyledContent(start_time.with(text_color).on(bg_color).bold()),
             PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
-            PrintStyledContent(bar.with(progress_color).on(bg_color)),
+            PrintStyledContent(adjusted_bar.with(progress_color).on(bg_color)),
             PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
             PrintStyledContent(end_time.with(text_color).on(bg_color).bold()),
             PrintStyledContent(" ║".with(frame_color).on(bg_color))
@@ -513,22 +528,12 @@ impl Theme for CyberpunkTheme {
 
 impl CyberpunkTheme {
     fn build_cyberpunk_bar(&self, progress: f64) -> String {
-        let bar_width = RenderContext::bar_width();
-        // Dynamically compute label width: borders + spaces + formatted dates
-        let left_border = "║ ";
-        let right_border = " ║";
-        let space_between = "  ";
-        let date_format_length = "2024-01-01 08:00".len(); // Standard date format length
-        let label_width = left_border.len() 
-            + date_format_length 
-            + space_between.len() 
-            + space_between.len() 
-            + date_format_length 
-            + right_border.len();
-        let inner_width = bar_width.saturating_sub(label_width);
-        let filled_chars = (progress * inner_width as f64).round() as usize;
+        // This method now just returns the base progress bar
+        // Width will be adjusted dynamically in the render method
+        let base_width = 60usize; // Base width for the progress bar part only
+        let filled_chars = (progress * base_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
-        let empty = "░".repeat(inner_width.saturating_sub(filled_chars));
+        let empty = "░".repeat(base_width.saturating_sub(filled_chars));
         format!("{}{}", filled, empty)
     }
 }
