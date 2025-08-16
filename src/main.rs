@@ -6,7 +6,7 @@ use crossterm::{
     queue,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use doit::{build_command, Args, ProgressBar, Theme};
+use doit::{build_command, Args, ProgressBar};
 use std::io::{stdout, Write};
 use std::time::Duration;
 
@@ -20,7 +20,7 @@ where
         args.start.naive_utc(),
         args.end.naive_utc(),
         args.title,
-        args.theme,
+        &args.theme,
     );
 
     let mut row;

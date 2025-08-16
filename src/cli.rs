@@ -3,12 +3,6 @@ use clap::{ArgAction, ArgMatches, Command, ValueEnum};
 use regex::Regex;
 use std::process::exit;
 
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-pub enum Theme {
-    Default,
-    Retro,
-}
-
 #[derive(Debug)]
 pub struct Args {
     pub start: DateTime<Local>,
@@ -16,7 +10,7 @@ pub struct Args {
     pub interval: u64,
     pub verbose: bool,
     pub title: Option<String>,
-    pub theme: Theme,
+    pub theme: String,
 }
 
 impl Args {
@@ -49,9 +43,9 @@ impl Args {
             verbose: matches.get_one("verbose").copied().unwrap(),
             title: matches.get_one::<String>("title").cloned(),
             theme: matches
-                .get_one::<Theme>("theme")
-                .copied()
-                .unwrap_or(Theme::Default),
+                .get_one::<String>("theme")
+                .cloned()
+                .unwrap_or_else(|| "default".to_string()),
         }
     }
 }
@@ -111,7 +105,7 @@ pub fn build_command() -> Command {
         .arg(
             clap::Arg::new("theme")
                 .long("theme")
-                .value_parser(clap::value_parser!(Theme))
+                .value_parser(clap::value_parser!(String))
                 .default_value("default")
                 .help("Theme for the progress display (default, retro)"),
         )
@@ -624,7 +618,7 @@ mod tests {
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.title, None);
-        assert_eq!(args.theme, Theme::Default);
+        assert_eq!(args.theme, "default");
     }
 
     #[test]
@@ -640,7 +634,7 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.theme, Theme::Retro);
+        assert_eq!(args.theme, "retro");
     }
 
     #[test]
@@ -656,6 +650,6 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.theme, Theme::Default);
+        assert_eq!(args.theme, "default");
     }
 }
