@@ -10,6 +10,7 @@ pub struct Args {
     pub interval: u64,
     pub verbose: bool,
     pub title: Option<String>,
+    pub theme: String,
 }
 
 impl Args {
@@ -41,6 +42,10 @@ impl Args {
             interval: matches.get_one("interval").copied().unwrap(),
             verbose: matches.get_one("verbose").copied().unwrap(),
             title: matches.get_one::<String>("title").cloned(),
+            theme: matches
+                .get_one::<String>("theme")
+                .cloned()
+                .unwrap_or_else(|| "default".to_string()),
         }
     }
 }
@@ -96,6 +101,13 @@ pub fn build_command() -> Command {
                 .long("title")
                 .value_parser(clap::value_parser!(String))
                 .help("Custom title for the progress session"),
+        )
+        .arg(
+            clap::Arg::new("theme")
+                .long("theme")
+                .value_parser(clap::value_parser!(String))
+                .default_value("default")
+                .help("Theme for the progress display [default|retro|cyberpunk]"),
         )
 }
 
@@ -606,5 +618,38 @@ mod tests {
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.title, None);
+        assert_eq!(args.theme, "default");
+    }
+
+    #[test]
+    fn test_parse_with_retro_theme() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--theme",
+            "retro",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.theme, "retro");
+    }
+
+    #[test]
+    fn test_parse_with_default_theme() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--theme",
+            "default",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.theme, "default");
     }
 }

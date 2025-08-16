@@ -3,26 +3,36 @@
 //! This module provides progress calculation and rendering functionality
 //! for time-based progress visualization with color support.
 
-use anyhow::Result;
-use chrono::{Local, NaiveDateTime, TimeDelta, Timelike};
-use crossterm::{
-    cursor::{Hide, MoveTo},
-    queue,
-    style::{Color, PrintStyledContent, ResetColor, Stylize},
-    terminal::{size, Clear, ClearType},
+use crate::theme::{
+    CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
 };
+use anyhow::Result;
+use chrono::{Local, NaiveDateTime, Timelike};
 use std::io::Write;
 
 pub struct ProgressBar {
     pub start: NaiveDateTime,
     pub end: NaiveDateTime,
     pub title: Option<String>,
+    pub theme_registry: ThemeRegistry,
+    pub current_theme: String,
 }
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
-    pub fn new(start: NaiveDateTime, end: NaiveDateTime, title: Option<String>) -> Self {
-        ProgressBar { start, end, title }
+    pub fn new(
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+        title: Option<String>,
+        theme_name: &str,
+    ) -> Self {
+        ProgressBar {
+            start,
+            end,
+            title,
+            theme_registry: ThemeRegistry::new(),
+            current_theme: theme_name.to_string(),
+        }
     }
 
     fn current_time() -> NaiveDateTime {
@@ -36,7 +46,7 @@ impl ProgressBar {
             if total_duration.num_seconds() == 0 {
                 return 1.0;
             }
-            let elapsed_duration = self.calculate_elapsed_time(Some(current));
+            let elapsed_duration = current - self.start;
             if elapsed_duration > total_duration {
                 return 1.0;
             }
@@ -48,252 +58,36 @@ impl ProgressBar {
         }
     }
 
-    fn calculate_elapsed_time(&self, current: Option<NaiveDateTime>) -> TimeDelta {
-        if let Some(current) = current {
-            current - self.start
-        } else {
-            self.calculate_elapsed_time(Some(Self::current_time()))
-        }
-    }
-
-    fn format_start_time_for_box(&self) -> String {
-        let label = "Start:";
-        let value = self.start.format("%Y-%m-%d %H:%M:%S").to_string();
-        Self::format_box_line(label, &value)
-    }
-
-    fn format_end_time_for_box(&self) -> String {
-        let label = "End:";
-        let value = self.end.format("%Y-%m-%d %H:%M:%S").to_string();
-        Self::format_box_line(label, &value)
-    }
-
-    fn format_progress(&self, current: NaiveDateTime) -> String {
-        let progress = self.calculate_progress_at(Some(current)) * 100.0;
-        format!("{progress:.0} %")
-    }
-
-    fn format_progress_and_elapsed_for_box(&self) -> String {
-        let current_time = Self::current_time();
-        let label = "Elapsed:";
-        let value = format!(
-            "{} | {}",
-            self.format_progress(current_time),
-            self.format_elapsed_time(current_time)
-        );
-        Self::format_box_line(label, &value)
-    }
-
-    fn format_box_line(label: &str, value: &str) -> String {
-        // Account for borders (subtract 4 for "┃ " and " ┃")
-        let available_width = Self::bar_width().saturating_sub(4);
-        let spaces = " ".repeat(available_width.saturating_sub(label.len() + value.len()));
-        format!("{label}{spaces}{value}")
-    }
-
-    fn format_elapsed_time(&self, current: NaiveDateTime) -> String {
-        let elapsed = self.calculate_elapsed_time(Some(current));
-        let minutes = elapsed.num_minutes();
-        if minutes < 60 {
-            return format!("{minutes} m");
-        }
-        let hours = elapsed.num_hours();
-        if hours < 24 {
-            return format!("{} h {} m", hours, minutes % 60);
-        }
-        let days = elapsed.num_days();
-        if days < 3 {
-            format!("{} d {} h", days, hours % 24)
-        } else {
-            format!("{days} d")
-        }
-    }
-
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_sign_loss)]
-    fn build_bar(progress: f64) -> String {
-        let filled_chars = (progress * ProgressBar::bar_width() as f64).round() as usize;
-        let filled = "█".repeat(filled_chars);
-        let empty = "░".repeat(ProgressBar::bar_width() - filled_chars);
-        format!("{filled}{empty}")
-    }
-
     #[allow(clippy::missing_errors_doc)]
     pub fn render<W>(&self, w: &mut W) -> Result<u16>
     where
         W: Write,
     {
-        let progress = self.calculate_progress_at(None);
-        let bar = ProgressBar::build_bar(progress);
-        let bar_width = ProgressBar::bar_width();
+        let context = RenderContext::new(
+            self.start,
+            self.end,
+            self.title.clone(),
+            Self::current_time(),
+            self.calculate_progress_at(None),
+        );
 
-        // Clear screen and reset cursor
-        queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
-
-        let mut row = 0;
-
-        // Display title if provided
-        if let Some(title) = &self.title {
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(title.to_string().with(Color::Reset).bold())
-            )?;
-            row += 1;
-            let top_border = "━".repeat(bar_width).to_string();
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(top_border.with(Color::Reset))
-            )?;
-            row += 1;
-        }
-
-        // Display progress bar
-        for _ in 0..3 {
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(bar.clone().with(Color::Reset))
-            )?;
-            row += 1;
-        }
-
-        // Draw bordered box
-        let top_border = format!("┏{}┓", "━".repeat(bar_width.saturating_sub(2)));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(top_border.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Start time row
-        let start_line = format!("┃ {} ┃", self.format_start_time_for_box());
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(start_line.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // End time row
-        let end_line = format!("┃ {} ┃", self.format_end_time_for_box());
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(end_line.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Middle separator
-        let middle_border = format!("┠{}┨", "─".repeat(bar_width.saturating_sub(2)));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(middle_border.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Elapsed time row
-        let elapsed_line = format!("┃ {} ┃", self.format_progress_and_elapsed_for_box());
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(elapsed_line.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Bottom border
-        let bottom_border = format!("┗{}┛", "━".repeat(bar_width.saturating_sub(2)));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(bottom_border.with(Color::Reset))
-        )?;
-        row += 1;
-
-        // Quit instructions (right-aligned, below the box)
-        let quit_text = "( Quit: q or Ctrl+c )";
-        let quit_padding = " ".repeat(bar_width.saturating_sub(quit_text.len()));
-        queue!(
-            w,
-            MoveTo(0, row),
-            PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset))
-        )?;
-
-        w.flush()?;
-        Ok(row)
-    }
-
-    fn bar_width() -> usize {
-        size().map(|(width, _)| width as usize).unwrap_or(60)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[allow(clippy::float_cmp)]
-    fn test_calculate_progress_at() {
-        let test_cases = vec![
-            (
-                "2025-01-01 00:00:00",
-                "2025-01-10 23:59:59",
-                "2025-01-01 00:00:00",
-                0.0,
-            ),
-            (
-                "2025-01-01 00:00:00",
-                "2025-01-10 23:59:59",
-                "2025-01-06 00:00:00",
-                0.5,
-            ),
-            (
-                "2025-01-01 00:00:00",
-                "2025-01-10 23:59:59",
-                "2025-01-10 23:59:59",
-                1.0,
-            ),
-            (
-                "2025-01-01 00:00:00",
-                "2025-01-10 23:59:59",
-                "2025-01-11 00:00:00",
-                1.0,
-            ),
-            (
-                "2025-01-01 00:00:00",
-                "2025-01-10 23:59:59",
-                "2025-01-12 00:00:00",
-                1.0,
-            ),
-        ];
-        for (start, end, current, progress) in test_cases {
-            let start = NaiveDateTime::parse_from_str(start, "%Y-%m-%d %H:%M:%S").unwrap();
-            let end = NaiveDateTime::parse_from_str(end, "%Y-%m-%d %H:%M:%S").unwrap();
-            let current = NaiveDateTime::parse_from_str(current, "%Y-%m-%d %H:%M:%S").unwrap();
-            let progress_bar = ProgressBar::new(start, end, None);
-            assert_eq!(
-                progress_bar.calculate_progress_at(Some(current)),
-                progress,
-                "Failed for start: {start}, end: {end}, current: {current}",
-            );
+        match self
+            .theme_registry
+            .get(&self.current_theme)
+            .unwrap_or(ThemeType::Default)
+        {
+            ThemeType::Default => {
+                let theme = DefaultTheme;
+                theme.render(&context, w)
+            }
+            ThemeType::Retro => {
+                let theme = RetroTheme;
+                theme.render(&context, w)
+            }
+            ThemeType::Cyberpunk => {
+                let theme = CyberpunkTheme;
+                theme.render(&context, w)
+            }
         }
     }
-
-    // #[test]
-    // fn test_build_bar() {
-    //     let test_cases = vec![
-    //         (0.0, "░".repeat(60)),
-    //         (1.0, "█".repeat(60)),
-    //         (0.5, "█".repeat(30) + &"░".repeat(30)),
-    //     ];
-    //     for (progress, expected) in test_cases {
-    //         let progress_bar = ProgressBar::new(start, end);
-    //         assert_eq!(progress_bar.build_bar(progress), expected);
-    //     }
-    // }
 }

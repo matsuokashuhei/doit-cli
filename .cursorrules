@@ -1,0 +1,58 @@
+# Cursor Rules for Rust Development
+
+## Code Quality Enforcement
+
+Before any git push operation, the following checks MUST pass:
+
+1. **Format Check**: Run `cargo fmt --all -- --check` to ensure code is properly formatted
+2. **Lint Check**: Run `cargo clippy --all-targets --all-features -- -W clippy::pedantic` to check for code quality issues
+
+## Pre-Push Checklist
+
+Always run these commands in sequence before pushing code:
+
+```bash
+# 1. Format check - ensures consistent code formatting
+cargo fmt --all -- --check
+
+# 2. Clippy check - catches potential issues and enforces best practices  
+cargo clippy --all-targets --all-features -- -W clippy::pedantic
+
+# 3. Build check - ensures code compiles
+cargo build
+
+# 4. Test check (if applicable)
+cargo test
+
+# Only push if all checks pass
+git push
+```
+
+## Auto-fix Commands
+
+If the checks fail, use these commands to auto-fix issues:
+
+```bash
+# Auto-format code
+cargo fmt --all
+
+# Auto-fix clippy issues where possible
+cargo clippy --fix --all-targets --all-features -- -W clippy::pedantic
+
+# Run checks again after fixes
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -W clippy::pedantic
+```
+
+## Code Quality Standards
+
+- All code must pass `cargo fmt` formatting
+- All clippy pedantic lints must be addressed or explicitly allowed
+- No unused imports or dead code
+- Use `#[must_use]` attributes for functions that return values that should not be ignored
+- Prefer inline format arguments over positional ones
+- Handle casting operations safely with appropriate `#[allow()]` attributes where intentional
+
+## Enforcement
+
+These rules are mandatory for all commits. Any push that violates these standards should be rejected.

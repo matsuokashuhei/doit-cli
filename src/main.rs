@@ -16,7 +16,12 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
-    let progress_bar = ProgressBar::new(args.start.naive_utc(), args.end.naive_utc(), args.title);
+    let progress_bar = ProgressBar::new(
+        args.start.naive_utc(),
+        args.end.naive_utc(),
+        args.title,
+        &args.theme,
+    );
 
     let mut row;
     enable_raw_mode()?;
