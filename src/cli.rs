@@ -48,7 +48,10 @@ impl Args {
             interval: matches.get_one("interval").copied().unwrap(),
             verbose: matches.get_one("verbose").copied().unwrap(),
             title: matches.get_one::<String>("title").cloned(),
-            theme: matches.get_one::<Theme>("theme").copied().unwrap_or(Theme::Default),
+            theme: matches
+                .get_one::<Theme>("theme")
+                .copied()
+                .unwrap_or(Theme::Default),
         }
     }
 }

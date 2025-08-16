@@ -3,6 +3,7 @@
 //! This module provides progress calculation and rendering functionality
 //! for time-based progress visualization with color support.
 
+use crate::Theme;
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime, TimeDelta, Timelike};
 use crossterm::{
@@ -12,7 +13,6 @@ use crossterm::{
     terminal::{size, Clear, ClearType},
 };
 use std::io::Write;
-use crate::Theme;
 
 pub struct ProgressBar {
     pub start: NaiveDateTime,
@@ -23,8 +23,18 @@ pub struct ProgressBar {
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
-    pub fn new(start: NaiveDateTime, end: NaiveDateTime, title: Option<String>, theme: Theme) -> Self {
-        ProgressBar { start, end, title, theme }
+    pub fn new(
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+        title: Option<String>,
+        theme: Theme,
+    ) -> Self {
+        ProgressBar {
+            start,
+            end,
+            title,
+            theme,
+        }
     }
 
     fn current_time() -> NaiveDateTime {
@@ -115,9 +125,10 @@ impl ProgressBar {
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_sign_loss)]
     fn build_bar(progress: f64) -> String {
-        let filled_chars = (progress * ProgressBar::bar_width() as f64).round() as usize;
+        let bar_width = ProgressBar::bar_width();
+        let filled_chars = (progress * bar_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
-        let empty = "░".repeat(ProgressBar::bar_width() - filled_chars);
+        let empty = "░".repeat(bar_width.saturating_sub(filled_chars));
         format!("{filled}{empty}")
     }
 
@@ -227,13 +238,12 @@ impl ProgressBar {
         )?;
         row += 1;
 
-        // Quit instructions (right-aligned, below the box)
+        // Quit instructions (left-aligned, below the box)
         let quit_text = "( Quit: q or Ctrl+c )";
-        let quit_padding = " ".repeat(bar_width.saturating_sub(quit_text.len()));
         queue!(
             w,
             MoveTo(0, row),
-            PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset))
+            PrintStyledContent(quit_text.with(Color::Reset))
         )?;
 
         w.flush()?;
@@ -241,7 +251,10 @@ impl ProgressBar {
     }
 
     fn bar_width() -> usize {
-        size().map(|(width, _)| width as usize).unwrap_or(60)
+        // Use a more conservative width calculation to account for wide characters
+        size()
+            .map(|(width, _)| (width as usize).saturating_sub(2))
+            .unwrap_or(58)
     }
 
     fn calculate_remaining_time(&self, current: NaiveDateTime) -> TimeDelta {
@@ -280,9 +293,12 @@ impl ProgressBar {
     }
 
     fn build_retro_bar(&self, progress: f64) -> String {
-        let filled_chars = (progress * ProgressBar::bar_width() as f64).round() as usize;
+        let bar_width = ProgressBar::bar_width();
+        // Account for the brackets, so inner bar width is bar_width - 2
+        let inner_width = bar_width.saturating_sub(2);
+        let filled_chars = (progress * inner_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
-        let empty = "░".repeat(ProgressBar::bar_width() - filled_chars);
+        let empty = "░".repeat(inner_width.saturating_sub(filled_chars));
         format!("[{}]", filled + &empty)
     }
 
@@ -410,11 +426,10 @@ impl ProgressBar {
 
         // Quit instructions
         let quit_text = "(Q) QUIT | (CTRL+C) ABORT";
-        let quit_padding = " ".repeat(bar_width.saturating_sub(quit_text.len()));
         queue!(
             w,
             MoveTo(0, row),
-            PrintStyledContent(format!("{quit_padding}{quit_text}").with(Color::Reset))
+            PrintStyledContent(quit_text.with(Color::Reset))
         )?;
 
         w.flush()?;
@@ -489,8 +504,10 @@ mod tests {
 
     #[test]
     fn test_get_retro_status_message() {
-        let start = NaiveDateTime::parse_from_str("2025-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-        let end = NaiveDateTime::parse_from_str("2025-01-10 23:59:59", "%Y-%m-%d %H:%M:%S").unwrap();
+        let start =
+            NaiveDateTime::parse_from_str("2025-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-01-10 23:59:59", "%Y-%m-%d %H:%M:%S").unwrap();
         let progress_bar = ProgressBar::new(start, end, None, Theme::Retro);
 
         assert_eq!(
@@ -525,17 +542,22 @@ mod tests {
 
     #[test]
     fn test_format_remaining_time() {
-        let start = NaiveDateTime::parse_from_str("2025-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-        let end = NaiveDateTime::parse_from_str("2025-01-01 01:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let start =
+            NaiveDateTime::parse_from_str("2025-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-01-01 01:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let progress_bar = ProgressBar::new(start, end, None, Theme::Retro);
 
-        let current = NaiveDateTime::parse_from_str("2025-01-01 00:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-01-01 00:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
         assert_eq!(progress_bar.format_remaining_time(current), "01h 00m");
 
-        let current = NaiveDateTime::parse_from_str("2025-01-01 01:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-01-01 01:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         assert_eq!(progress_bar.format_remaining_time(current), "30m");
 
-        let current = NaiveDateTime::parse_from_str("2025-01-01 01:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let current =
+            NaiveDateTime::parse_from_str("2025-01-01 01:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
         assert_eq!(progress_bar.format_remaining_time(current), "00m");
     }
 }
