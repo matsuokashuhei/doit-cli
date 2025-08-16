@@ -107,7 +107,7 @@ pub fn build_command() -> Command {
                 .long("theme")
                 .value_parser(clap::value_parser!(String))
                 .default_value("default")
-                .help("Theme for the progress display (default, retro)"),
+                .help("Theme for the progress display (default, retro, cyberpunk)"),
         )
 }
 

@@ -8,7 +8,7 @@ use chrono::{NaiveDateTime, TimeDelta};
 use crossterm::{
     cursor::{Hide, MoveTo},
     queue,
-    style::{Color, PrintStyledContent, ResetColor, Stylize},
+    style::{Color, PrintStyledContent, ResetColor, SetBackgroundColor, Stylize},
     terminal::{size, Clear, ClearType},
 };
 use std::collections::HashMap;
@@ -84,14 +84,14 @@ impl RenderContext {
         let remaining = self.calculate_remaining_time();
         let minutes = remaining.num_minutes();
         if minutes < 60 {
-            return format!("{:02}m", minutes);
+            return format!("{} m", minutes);
         }
         let hours = remaining.num_hours();
         if hours < 24 {
-            return format!("{:02}h {:02}m", hours, minutes % 60);
+            return format!("{} h {} m", hours, minutes % 60);
         }
         let days = remaining.num_days();
-        format!("{:02}d {:02}h", days, hours % 24)
+        format!("{} d {} h", days, hours % 24)
     }
 }
 
@@ -100,6 +100,7 @@ impl RenderContext {
 pub enum ThemeType {
     Default,
     Retro,
+    Cyberpunk,
 }
 
 /// Base trait for all themes
@@ -230,24 +231,20 @@ impl DefaultTheme {
 
     fn format_start_time_for_box(&self, context: &RenderContext) -> String {
         let label = "Start:";
-        let value = context.start.format("%Y-%m-%d %H:%M:%S").to_string();
+        let value = context.start.format("%Y-%m-%d %H:%M").to_string();
         self.format_box_line(label, &value, context.bar_width)
     }
 
     fn format_end_time_for_box(&self, context: &RenderContext) -> String {
         let label = "End:";
-        let value = context.end.format("%Y-%m-%d %H:%M:%S").to_string();
+        let value = context.end.format("%Y-%m-%d %H:%M").to_string();
         self.format_box_line(label, &value, context.bar_width)
     }
 
     fn format_progress_and_elapsed_for_box(&self, context: &RenderContext) -> String {
         let label = "Elapsed:";
         let progress_percent = (context.progress * 100.0) as i32;
-        let value = format!(
-            "{}% | {}",
-            progress_percent,
-            context.format_elapsed_time()
-        );
+        let value = format!("{}% | {}", progress_percent, context.format_elapsed_time());
         self.format_box_line(label, &value, context.bar_width)
     }
 
@@ -297,7 +294,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // Start time
-        let start_line = format!("[START]     {}", context.start.format("%Y-%m-%d %H:%M:%S"));
+        let start_line = format!("[START]     {}", context.start.format("%Y-%m-%d %H:%M"));
         queue!(
             w,
             MoveTo(0, row),
@@ -306,7 +303,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // End time
-        let end_line = format!("[END]       {}", context.end.format("%Y-%m-%d %H:%M:%S"));
+        let end_line = format!("[END]       {}", context.end.format("%Y-%m-%d %H:%M"));
         queue!(
             w,
             MoveTo(0, row),
@@ -420,6 +417,166 @@ impl RetroTheme {
     }
 }
 
+/// Cyberpunk theme implementation
+pub struct CyberpunkTheme;
+
+impl Theme for CyberpunkTheme {
+    fn name(&self) -> &'static str {
+        "cyberpunk"
+    }
+
+    fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
+        let bar = self.build_cyberpunk_bar(context.progress);
+        let bar_width = context.bar_width;
+
+        // Clear screen, set background color, and reset cursor
+        let bg_color = Color::Rgb {
+            r: 33,
+            g: 11,
+            b: 75,
+        }; // バイオレット #210B4B
+        let frame_color = Color::Rgb {
+            r: 106,
+            g: 42,
+            b: 152,
+        }; // デイジーブッシュ #6A2A98
+        let progress_color = Color::Rgb {
+            r: 255,
+            g: 61,
+            b: 148,
+        }; // ワイルドストロベリー #FF3D94
+        let text_color = Color::Rgb {
+            r: 181,
+            g: 48,
+            b: 126,
+        }; // ミディアムレッドバイオレット #B5307E
+        let title_accent_color = Color::Rgb {
+            r: 0,
+            g: 206,
+            b: 209,
+        }; // ブライトシアン #00CED1
+        let message_accent_color = Color::Rgb {
+            r: 0,
+            g: 206,
+            b: 209,
+        }; // ブライトシアン #00CED1
+        queue!(
+            w,
+            ResetColor,
+            SetBackgroundColor(bg_color),
+            Clear(ClearType::All),
+            Hide
+        )?;
+
+        let mut row = 0;
+
+        // Title with cyberpunk styling
+        if let Some(title) = &context.title {
+            let title_line = format!("[{}]", title.to_uppercase());
+            queue!(
+                w,
+                MoveTo(0, row),
+                PrintStyledContent(title_line.with(title_accent_color).on(bg_color).bold())
+            )?;
+            row += 1;
+        }
+
+        // Top border with frame color
+        let top_border = format!("╔{}╗", "═".repeat(bar_width.saturating_sub(2)));
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(top_border.with(frame_color).on(bg_color))
+        )?;
+        row += 1;
+
+        // Progress bar line with time labels
+        let start_time = context.start.format("%Y-%m-%d %H:%M").to_string();
+        let end_time = context.end.format("%Y-%m-%d %H:%M").to_string();
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent("║ ".with(frame_color).on(bg_color)),
+            PrintStyledContent(start_time.with(text_color).on(bg_color).bold()),
+            PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
+            PrintStyledContent(bar.with(progress_color).on(bg_color)),
+            PrintStyledContent("  ".with(Color::Reset).on(bg_color)),
+            PrintStyledContent(end_time.with(text_color).on(bg_color).bold()),
+            PrintStyledContent(" ║".with(frame_color).on(bg_color))
+        )?;
+        row += 1;
+
+        // Info line
+        let progress_percent = (context.progress * 100.0) as i32;
+        let elapsed_time = context.format_elapsed_time();
+        let remaining_time = context.format_remaining_time();
+        let info_text = format!(
+            "{}% | {} elapsed | {} remaining",
+            progress_percent, elapsed_time, remaining_time
+        );
+        let fixed_prefix = "║                   "; // 20 characters to align with progress bar start position (║ + 19 spaces)
+        let fixed_suffix = "║"; // 1 character
+
+        // Calculate the exact length like the progress bar line does
+        let content_length =
+            fixed_prefix.chars().count() + info_text.chars().count() + fixed_suffix.chars().count();
+        let padding_width = if content_length < bar_width {
+            bar_width - content_length
+        } else {
+            0
+        };
+        let padding = " ".repeat(padding_width);
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(fixed_prefix.with(frame_color).on(bg_color)),
+            PrintStyledContent(info_text.with(text_color).on(bg_color).bold()),
+            PrintStyledContent(padding.with(Color::Reset).on(bg_color)),
+            PrintStyledContent(fixed_suffix.with(frame_color).on(bg_color))
+        )?;
+        row += 1;
+
+        // Bottom border with frame color
+        let bottom_border = format!("╚{}╝", "═".repeat(bar_width.saturating_sub(2)));
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(bottom_border.with(frame_color).on(bg_color))
+        )?;
+        row += 1;
+
+        // Cyberpunk motivation message
+        let lightning1 = "⚡";
+        let message = " KEEP THE ENERGY FLOWING — CYBER MINDSET ";
+        let lightning2 = "⚡";
+        let full_message = format!("{}{}{}", lightning1, message, lightning2);
+        let motivation_padding = " ".repeat((bar_width.saturating_sub(full_message.len())) / 2);
+        queue!(
+            w,
+            MoveTo(0, row),
+            PrintStyledContent(motivation_padding.with(Color::Reset).on(bg_color)),
+            PrintStyledContent(lightning1.with(Color::Reset).on(bg_color)),
+            PrintStyledContent(message.with(message_accent_color).on(bg_color).bold()),
+            PrintStyledContent(lightning2.with(Color::Reset).on(bg_color))
+        )?;
+
+        w.flush()?;
+        Ok(row)
+    }
+}
+
+impl CyberpunkTheme {
+    fn build_cyberpunk_bar(&self, progress: f64) -> String {
+        let bar_width = RenderContext::bar_width();
+        // Account for time labels, spaces, and borders: "║ " + "2024-01-01 08:00" + "  " + "  " + "2024-01-01 17:00" + " ║" = 2 + 16 + 2 + 2 + 16 + 2 = 40
+        let inner_width = bar_width.saturating_sub(40);
+        let filled_chars = (progress * inner_width as f64).round() as usize;
+        let filled = "█".repeat(filled_chars);
+        let empty = "░".repeat(inner_width.saturating_sub(filled_chars));
+        format!("{}{}", filled, empty)
+    }
+}
+
 /// Theme registry for managing all available themes
 pub struct ThemeRegistry {
     themes: HashMap<String, ThemeType>,
@@ -432,6 +589,7 @@ impl ThemeRegistry {
         };
         registry.register("default", ThemeType::Default);
         registry.register("retro", ThemeType::Retro);
+        registry.register("cyberpunk", ThemeType::Cyberpunk);
         registry
     }
 

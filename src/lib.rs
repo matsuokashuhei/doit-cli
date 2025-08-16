@@ -10,4 +10,6 @@ pub mod theme;
 // Re-export commonly used types
 pub use cli::{build_command, Args};
 pub use progress_bar::ProgressBar;
-pub use theme::{DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType};
+pub use theme::{
+    CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
+};
