@@ -440,17 +440,20 @@ impl Theme for CyberpunkTheme {
         let start_time = context.start.format("%Y-%m-%d %H:%M").to_string();
         let end_time = context.end.format("%Y-%m-%d %H:%M").to_string();
 
-        // Calculate the exact width needed to match border lines
-        let fixed_parts_width =
-            "║ ".len() + start_time.len() + "  ".len() + "  ".len() + end_time.len() + " ║".len();
+        // Calculate the exact width needed to match border lines  
+        // Total structure: "║ " + start_time + "  " + bar + "  " + end_time + " ║"
+        // We know: start_time = "2025-08-12 08:00" (16 chars), end_time same (16 chars)
+        let fixed_parts_width = 2 + 16 + 2 + 2 + 16 + 2; // 40 characters total for fixed parts
         let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
-        let adjusted_bar = if bar.len() > bar_inner_width {
+        
+        // Ensure the bar fits exactly in the available space
+        let adjusted_bar = if bar.chars().count() > bar_inner_width {
             bar.chars().take(bar_inner_width).collect::<String>()
         } else {
             format!(
                 "{}{}",
                 bar,
-                " ".repeat(bar_inner_width.saturating_sub(bar.len()))
+                " ".repeat(bar_inner_width.saturating_sub(bar.chars().count()))
             )
         };
 
