@@ -88,7 +88,7 @@ impl RenderContext {
         let total_hours = total_duration.num_hours();
         let total_days = total_duration.num_days();
 
-        if total_minutes < 60 {
+        if total_minutes <= 60 {
             // Within 1 hour: show only minutes
             format!("{}m", total_minutes)
         } else if total_hours <= 24 {
@@ -110,8 +110,14 @@ impl RenderContext {
                 format!("{}d", days)
             }
         } else {
-            // Otherwise: show only days
-            format!("{}d", total_days)
+            // Otherwise: show weeks and days
+            let weeks = total_days / 7;
+            let days = total_days % 7;
+            if days > 0 {
+                format!("{}w {}d", weeks, days)
+            } else {
+                format!("{}w", weeks)
+            }
         }
     }
     pub fn calculate_elapsed_time(&self) -> TimeDelta {
@@ -533,7 +539,8 @@ impl Theme for SynthwaveTheme {
 
         // Calculate the exact width needed to match border lines
         // Total structure: "║ " + start_time + "  " + bar + "  " + end_time + " ║"
-        // We know: start_time length varies by format, end_time same length
+        // Note: Using chars().count() for width - may be inaccurate for multi-byte Unicode
+        // characters but adequate for time format strings which use ASCII characters
         let start_time_len = start_time.chars().count();
         let end_time_len = end_time.chars().count();
         let fixed_parts_width = 2 + start_time_len + 2 + 2 + end_time_len + 2; // dynamic calculation based on actual lengths
@@ -768,7 +775,29 @@ mod tests {
             NaiveDateTime::parse_from_str("2025-09-15 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let context = RenderContext::new(start, end, None, start, 0.0);
 
-        assert_eq!(context.format_total_time(), "45d");
+        assert_eq!(context.format_total_time(), "6w 3d");
+    }
+
+    #[test]
+    fn test_format_total_time_exactly_1h() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 11:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "60m");
+    }
+
+    #[test]
+    fn test_format_total_time_exactly_weeks() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-01 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-15 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "2w");
     }
 
     #[test]
@@ -814,14 +843,14 @@ mod tests {
     }
 
     #[test]
-    fn test_format_total_time_exactly_1h() {
+    fn test_format_total_time_exactly_60m() {
         let start =
             NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let end =
             NaiveDateTime::parse_from_str("2025-08-16 11:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let context = RenderContext::new(start, end, None, start, 0.0);
 
-        assert_eq!(context.format_total_time(), "1h");
+        assert_eq!(context.format_total_time(), "60m");
     }
 
     #[test]

@@ -3,11 +3,8 @@ use clap::{ArgAction, ArgMatches, Command};
 use regex::Regex;
 use std::process::exit;
 
-/// Get dynamic format string based on duration between two times
-/// - Within 24 hours: "HH:MM"
-/// - Within 7 days: "mm-dd HH:MM"
-/// - Otherwise: "YYYY-mm-dd"
-fn get_dynamic_format(start: DateTime<Local>, end: DateTime<Local>) -> &'static str {
+/// Get dynamic format string for error messages based on duration between two times
+fn get_error_format(start: DateTime<Local>, end: DateTime<Local>) -> &'static str {
     let duration = end - start;
     let duration_hours = duration.num_hours();
 
@@ -45,7 +42,7 @@ impl Args {
             .unwrap_or_else(|| start + matches.get_one::<Duration>("duration").copied().unwrap());
 
         if end < start {
-            let format = get_dynamic_format(start, end);
+            let format = get_error_format(start, end);
             println!(
                 "End time {end} must be after start time {start}.",
                 start = start.format(format),
