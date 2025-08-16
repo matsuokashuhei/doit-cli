@@ -32,7 +32,7 @@ Just Do It!
 - 🔄 Real-time updates
 - 🎨 Colored output with decorative borders
 - 📝 Custom title support for progress sessions
-- 🎭 Multiple themes (default, retro)
+- 🎭 Multiple themes (default, retro, cyberpunk)
 - 🖥️ Cross-platform (Linux/macOS/Windows)
 
 ## Install
