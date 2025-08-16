@@ -7,7 +7,7 @@ use crate::theme::{
     CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
 };
 use anyhow::Result;
-use chrono::{Local, NaiveDateTime, TimeDelta, Timelike};
+use chrono::{Local, NaiveDateTime, Timelike};
 use std::io::Write;
 
 pub struct ProgressBar {

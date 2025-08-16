@@ -380,32 +380,32 @@ impl Theme for CyberpunkTheme {
             r: 33,
             g: 11,
             b: 75,
-        }; // バイオレット #210B4B
+        }; // Violet #210B4B
         let frame_color = Color::Rgb {
             r: 106,
             g: 42,
             b: 152,
-        }; // デイジーブッシュ #6A2A98
+        }; // Daisy Bush #6A2A98
         let progress_color = Color::Rgb {
             r: 255,
             g: 61,
             b: 148,
-        }; // ワイルドストロベリー #FF3D94
+        }; // Wild Strawberry #FF3D94
         let text_color = Color::Rgb {
             r: 181,
             g: 48,
             b: 126,
-        }; // ミディアムレッドバイオレット #B5307E
+        }; // Medium Red Violet #B5307E
         let title_accent_color = Color::Rgb {
             r: 0,
             g: 206,
             b: 209,
-        }; // ブライトシアン #00CED1
+        }; // Bright Cyan #00CED1
         let message_accent_color = Color::Rgb {
             r: 0,
             g: 206,
             b: 209,
-        }; // ブライトシアン #00CED1
+        }; // Bright Cyan #00CED1
         queue!(
             w,
             ResetColor,
@@ -514,8 +514,18 @@ impl Theme for CyberpunkTheme {
 impl CyberpunkTheme {
     fn build_cyberpunk_bar(&self, progress: f64) -> String {
         let bar_width = RenderContext::bar_width();
-        // Account for time labels, spaces, and borders: "║ " + "2024-01-01 08:00" + "  " + "  " + "2024-01-01 17:00" + " ║" = 2 + 16 + 2 + 2 + 16 + 2 = 40
-        let inner_width = bar_width.saturating_sub(40);
+        // Dynamically compute label width: borders + spaces + formatted dates
+        let left_border = "║ ";
+        let right_border = " ║";
+        let space_between = "  ";
+        let date_format_length = "2024-01-01 08:00".len(); // Standard date format length
+        let label_width = left_border.len() 
+            + date_format_length 
+            + space_between.len() 
+            + space_between.len() 
+            + date_format_length 
+            + right_border.len();
+        let inner_width = bar_width.saturating_sub(label_width);
         let filled_chars = (progress * inner_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
         let empty = "░".repeat(inner_width.saturating_sub(filled_chars));

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
-use clap::{ArgAction, ArgMatches, Command, ValueEnum};
+use clap::{ArgAction, ArgMatches, Command};
 use regex::Regex;
 use std::process::exit;
 
@@ -106,8 +106,6 @@ pub fn build_command() -> Command {
             clap::Arg::new("theme")
                 .long("theme")
                 .value_parser(clap::value_parser!(String))
-                .default_value("default")
-                .value_parser(clap::value_parser!(Theme))
                 .default_value("default")
                 .help("Theme for the progress display [default|retro|cyberpunk]"),
         )
