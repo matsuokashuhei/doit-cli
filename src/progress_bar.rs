@@ -3,7 +3,9 @@
 //! This module provides progress calculation and rendering functionality
 //! for time-based progress visualization with color support.
 
-use crate::theme::{CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType};
+use crate::theme::{
+    CyberpunkTheme, DefaultTheme, RenderContext, RetroTheme, Theme, ThemeRegistry, ThemeType,
+};
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime, TimeDelta, Timelike};
 use std::io::Write;
