@@ -40,6 +40,70 @@ impl RenderContext {
         }
     }
 
+    /// Get dynamic format string based on duration
+    /// - Within 24 hours: "HH:MM"
+    /// - Within 7 days: "mm-dd HH:MM"
+    /// - Otherwise: "YYYY-mm-dd"
+    pub fn get_time_format(&self) -> &'static str {
+        let duration = self.end - self.start;
+        let duration_hours = duration.num_hours();
+
+        if duration_hours <= 24 {
+            "%H:%M"
+        } else if duration.num_days() <= 7 {
+            "%m-%d %H:%M"
+        } else {
+            "%Y-%m-%d"
+        }
+    }
+
+    /// Format start time according to duration
+    pub fn format_start_time(&self) -> String {
+        self.start.format(self.get_time_format()).to_string()
+    }
+
+    /// Format end time according to duration
+    pub fn format_end_time(&self) -> String {
+        self.end.format(self.get_time_format()).to_string()
+    }
+
+    /// Format total duration according to its length
+    /// - Within 1 hour: "m"
+    /// - Within 24 hours: "h m"
+    /// - Within 7 days: "d h"
+    /// - Otherwise: "d"
+    pub fn format_total_time(&self) -> String {
+        let total_duration = self.end - self.start;
+        let total_minutes = total_duration.num_minutes();
+        let total_hours = total_duration.num_hours();
+        let total_days = total_duration.num_days();
+
+        if total_minutes < 60 {
+            // Within 1 hour: show only minutes
+            format!("{}m", total_minutes)
+        } else if total_hours <= 24 {
+            // Within 24 hours: show hours and minutes
+            let hours = total_hours;
+            let minutes = total_minutes % 60;
+            if minutes > 0 {
+                format!("{}h {}m", hours, minutes)
+            } else {
+                format!("{}h", hours)
+            }
+        } else if total_days <= 7 {
+            // Within 7 days: show days and hours
+            let days = total_days;
+            let hours = total_hours % 24;
+            if hours > 0 {
+                format!("{}d {}h", days, hours)
+            } else {
+                format!("{}d", days)
+            }
+        } else {
+            // Otherwise: show only days
+            format!("{}d", total_days)
+        }
+    }
     pub fn calculate_elapsed_time(&self) -> TimeDelta {
         self.current_time - self.start
     }
@@ -135,22 +199,11 @@ impl Theme for DefaultTheme {
         }
 
         // Time range, percentage, and duration info
-        let start_time = context.start.format("%Y-%m-%d %H:%M");
-        let end_time = context.end.format("%Y-%m-%d %H:%M");
+        let start_time = context.format_start_time();
+        let end_time = context.format_end_time();
         let progress_percent = (context.progress * 100.0) as i32;
         let elapsed_time = context.format_elapsed_time();
-        let total_duration = context.end - context.start;
-        let total_hours = total_duration.num_hours();
-        let total_minutes = total_duration.num_minutes() % 60;
-        let total_time = if total_hours > 0 {
-            if total_minutes > 0 {
-                format!("{}h {}m", total_hours, total_minutes)
-            } else {
-                format!("{}h", total_hours)
-            }
-        } else {
-            format!("{}m", total_minutes)
-        };
+        let total_time = context.format_total_time();
 
         let info_line = format!(
             "{} → {}   |   {}%   |   {} / {}",
@@ -239,7 +292,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // Start time
-        let start_line = format!("[START]     {}", context.start.format("%Y-%m-%d %H:%M"));
+        let start_line = format!("[START]     {}", context.format_start_time());
         queue!(
             w,
             MoveTo(0, row),
@@ -248,7 +301,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // End time
-        let end_line = format!("[END]       {}", context.end.format("%Y-%m-%d %H:%M"));
+        let end_line = format!("[END]       {}", context.format_end_time());
         queue!(
             w,
             MoveTo(0, row),
@@ -452,13 +505,15 @@ impl Theme for SynthwaveTheme {
         row += 1;
 
         // Progress bar line with time labels
-        let start_time = context.start.format("%Y-%m-%d %H:%M").to_string();
-        let end_time = context.end.format("%Y-%m-%d %H:%M").to_string();
+        let start_time = context.format_start_time();
+        let end_time = context.format_end_time();
 
         // Calculate the exact width needed to match border lines
         // Total structure: "║ " + start_time + "  " + bar + "  " + end_time + " ║"
-        // We know: start_time = "2025-08-12 08:00" (16 chars), end_time same (16 chars)
-        let fixed_parts_width = 2 + 16 + 2 + 2 + 16 + 2; // 40 characters total for fixed parts
+        // We know: start_time length varies by format, end_time same length
+        let start_time_len = start_time.chars().count();
+        let end_time_len = end_time.chars().count();
+        let fixed_parts_width = 2 + start_time_len + 2 + 2 + end_time_len + 2; // dynamic calculation based on actual lengths
         let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
 
         // Create the progress bar with the correct width
@@ -576,5 +631,131 @@ impl ThemeRegistry {
 impl Default for ThemeRegistry {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDateTime;
+
+    #[test]
+    fn test_get_time_format_24h_within() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.get_time_format(), "%H:%M");
+        assert_eq!(context.format_start_time(), "10:00");
+        assert_eq!(context.format_end_time(), "18:00");
+    }
+
+    #[test]
+    fn test_get_time_format_7d_within() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-20 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.get_time_format(), "%m-%d %H:%M");
+        assert_eq!(context.format_start_time(), "08-16 10:00");
+        assert_eq!(context.format_end_time(), "08-20 18:00");
+    }
+
+    #[test]
+    fn test_get_time_format_over_7d() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-01 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-09-15 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.get_time_format(), "%Y-%m-%d");
+        assert_eq!(context.format_start_time(), "2025-08-01");
+        assert_eq!(context.format_end_time(), "2025-09-15");
+    }
+
+    #[test]
+    fn test_get_time_format_exactly_24h() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-17 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.get_time_format(), "%H:%M");
+        assert_eq!(context.format_start_time(), "10:00");
+        assert_eq!(context.format_end_time(), "10:00");
+    }
+
+    #[test]
+    fn test_get_time_format_exactly_7d() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-23 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.get_time_format(), "%m-%d %H:%M");
+        assert_eq!(context.format_start_time(), "08-16 10:00");
+        assert_eq!(context.format_end_time(), "08-23 10:00");
+    }
+
+    #[test]
+    fn test_format_total_time_within_1h() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 10:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "30m");
+    }
+
+    #[test]
+    fn test_format_total_time_within_24h() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 18:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "8h 30m");
+    }
+
+    #[test]
+    fn test_format_total_time_within_7d() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-19 16:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "3d 6h");
+    }
+
+    #[test]
+    fn test_format_total_time_over_7d() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-01 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-09-15 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "45d");
+    }
+
+    #[test]
+    fn test_format_total_time_exactly_1h() {
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-16 10:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-08-16 11:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "1h");
     }
 }
