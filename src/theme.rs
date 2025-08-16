@@ -144,7 +144,11 @@ impl Theme for DefaultTheme {
         let total_hours = total_duration.num_hours();
         let total_minutes = total_duration.num_minutes() % 60;
         let total_time = if total_hours > 0 {
-            format!("{}h {}m", total_hours, total_minutes)
+            if total_minutes > 0 {
+                format!("{}h {}m", total_hours, total_minutes)
+            } else {
+                format!("{}h", total_hours)
+            }
         } else {
             format!("{}m", total_minutes)
         };
