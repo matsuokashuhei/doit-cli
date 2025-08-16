@@ -109,14 +109,23 @@ impl RenderContext {
             } else {
                 format!("{}d", days)
             }
-        } else {
-            // Otherwise: show weeks and days
+        } else if total_days < 365 {
+            // Within a year: show weeks and days
             let weeks = total_days / 7;
             let days = total_days % 7;
             if days > 0 {
                 format!("{}w {}d", weeks, days)
             } else {
                 format!("{}w", weeks)
+            }
+        } else {
+            // 365 days or more: show years and days
+            let years = total_days / 365;
+            let days = total_days % 365;
+            if days > 0 {
+                format!("{}y {}d", years, days)
+            } else {
+                format!("{}y", years)
             }
         }
     }
@@ -158,10 +167,21 @@ impl RenderContext {
             return format!("{} h {} m", hours, minutes % 60);
         }
         let days = elapsed.num_days();
-        if days < 3 {
-            format!("{} d {} h", days, hours % 24)
+        if days < 365 {
+            if days < 3 {
+                format!("{} d {} h", days, hours % 24)
+            } else {
+                format!("{days} d")
+            }
         } else {
-            format!("{days} d")
+            // 365 days or more: show years and days
+            let years = days / 365;
+            let remaining_days = days % 365;
+            if remaining_days > 0 {
+                format!("{} y {} d", years, remaining_days)
+            } else {
+                format!("{} y", years)
+            }
         }
     }
 
@@ -176,7 +196,18 @@ impl RenderContext {
             return format!("{} h {} m", hours, minutes % 60);
         }
         let days = remaining.num_days();
-        format!("{} d {} h", days, hours % 24)
+        if days < 365 {
+            format!("{} d {} h", days, hours % 24)
+        } else {
+            // 365 days or more: show years and days
+            let years = days / 365;
+            let remaining_days = days % 365;
+            if remaining_days > 0 {
+                format!("{} y {} d", years, remaining_days)
+            } else {
+                format!("{} y", years)
+            }
+        }
     }
 }
 
@@ -799,6 +830,28 @@ mod tests {
         let context = RenderContext::new(start, end, None, start, 0.0);
 
         assert_eq!(context.format_total_time(), "2w");
+    }
+
+    #[test]
+    fn test_format_total_time_over_365d() {
+        let start =
+            NaiveDateTime::parse_from_str("1977-10-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2057-10-30 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "80y 19d");
+    }
+
+    #[test]
+    fn test_format_total_time_years_with_days() {
+        let start =
+            NaiveDateTime::parse_from_str("2023-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-06-15 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let context = RenderContext::new(start, end, None, start, 0.0);
+
+        assert_eq!(context.format_total_time(), "2y 166d");
     }
 
     #[test]
