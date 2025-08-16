@@ -118,7 +118,7 @@ impl Theme for DefaultTheme {
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
-        let bar = self.build_bar(context.progress);
+        let bar = DefaultTheme::build_bar(context.progress);
 
         // Clear screen and reset cursor
         queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
@@ -193,7 +193,7 @@ impl Theme for DefaultTheme {
 }
 
 impl DefaultTheme {
-    fn build_bar(&self, progress: f64) -> String {
+    fn build_bar(progress: f64) -> String {
         let bar_width = RenderContext::bar_width();
         let filled_chars = (progress * bar_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
@@ -211,7 +211,7 @@ impl Theme for RetroTheme {
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
-        let bar = self.build_retro_bar(context.progress);
+        let bar = RetroTheme::build_retro_bar(context.progress);
         let bar_width = context.bar_width;
 
         // Clear screen and reset cursor
@@ -308,7 +308,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // Status message
-        let status_message = self.get_retro_status_message(context.progress);
+        let status_message = RetroTheme::get_retro_status_message(context.progress);
         let status_line = format!("STATUS: > {}", status_message);
         queue!(
             w,
@@ -340,7 +340,7 @@ impl Theme for RetroTheme {
 }
 
 impl RetroTheme {
-    fn build_retro_bar(&self, progress: f64) -> String {
+    fn build_retro_bar(progress: f64) -> String {
         let bar_width = RenderContext::bar_width();
         // Account for the brackets, so inner bar width is bar_width - 2
         let inner_width = bar_width.saturating_sub(2);
@@ -350,7 +350,7 @@ impl RetroTheme {
         format!("[{}]", filled + &empty)
     }
 
-    fn get_retro_status_message(&self, progress: f64) -> &'static str {
+    fn get_retro_status_message(progress: f64) -> &'static str {
         match (progress * 100.0) as i32 {
             0..=10 => "MISSION INITIATED. LOCK AND LOAD, SOLDIER!",
             11..=25 => "ENGAGING TARGET. MAINTAIN FOCUS AND DISCIPLINE.",
@@ -372,7 +372,7 @@ impl Theme for CyberpunkTheme {
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
-        let bar = self.build_cyberpunk_bar(context.progress);
+        let bar = CyberpunkTheme::build_cyberpunk_bar(context.progress);
         let bar_width = context.bar_width;
 
         // Clear screen, set background color, and reset cursor
@@ -440,12 +440,12 @@ impl Theme for CyberpunkTheme {
         let start_time = context.start.format("%Y-%m-%d %H:%M").to_string();
         let end_time = context.end.format("%Y-%m-%d %H:%M").to_string();
 
-        // Calculate the exact width needed to match border lines  
+        // Calculate the exact width needed to match border lines
         // Total structure: "║ " + start_time + "  " + bar + "  " + end_time + " ║"
         // We know: start_time = "2025-08-12 08:00" (16 chars), end_time same (16 chars)
         let fixed_parts_width = 2 + 16 + 2 + 2 + 16 + 2; // 40 characters total for fixed parts
         let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
-        
+
         // Ensure the bar fits exactly in the available space
         let adjusted_bar = if bar.chars().count() > bar_inner_width {
             bar.chars().take(bar_inner_width).collect::<String>()
@@ -484,11 +484,7 @@ impl Theme for CyberpunkTheme {
         // Calculate the exact length like the progress bar line does
         let content_length =
             fixed_prefix.chars().count() + info_text.chars().count() + fixed_suffix.chars().count();
-        let padding_width = if content_length < bar_width {
-            bar_width - content_length
-        } else {
-            0
-        };
+        let padding_width = bar_width.saturating_sub(content_length);
         let padding = " ".repeat(padding_width);
         queue!(
             w,
@@ -530,7 +526,7 @@ impl Theme for CyberpunkTheme {
 }
 
 impl CyberpunkTheme {
-    fn build_cyberpunk_bar(&self, progress: f64) -> String {
+    fn build_cyberpunk_bar(progress: f64) -> String {
         // This method now just returns the base progress bar
         // Width will be adjusted dynamically in the render method
         let base_width = 60usize; // Base width for the progress bar part only
