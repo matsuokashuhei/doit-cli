@@ -11,27 +11,27 @@ use chrono::{Local, NaiveDateTime, Timelike};
 use std::io::Write;
 
 pub struct ProgressBar {
-    pub start: NaiveDateTime,
-    pub end: NaiveDateTime,
-    pub title: Option<String>,
+    pub from: NaiveDateTime,
+    pub to: NaiveDateTime,
+    pub goal: Option<String>,
     pub theme_registry: ThemeRegistry,
-    pub current_theme: String,
+    pub current_style: String,
 }
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
     pub fn new(
-        start: NaiveDateTime,
-        end: NaiveDateTime,
-        title: Option<String>,
-        theme_name: &str,
+        from: NaiveDateTime,
+        to: NaiveDateTime,
+        goal: Option<String>,
+        style_name: &str,
     ) -> Self {
         ProgressBar {
-            start,
-            end,
-            title,
+            from,
+            to,
+            goal,
             theme_registry: ThemeRegistry::new(),
-            current_theme: theme_name.to_string(),
+            current_style: style_name.to_string(),
         }
     }
 
@@ -42,11 +42,11 @@ impl ProgressBar {
     #[allow(clippy::cast_precision_loss)]
     fn calculate_progress_at(&self, current: Option<NaiveDateTime>) -> f64 {
         if let Some(current) = current {
-            let total_duration = self.end - self.start;
+            let total_duration = self.to - self.from;
             if total_duration.num_seconds() == 0 {
                 return 1.0;
             }
-            let elapsed_duration = current - self.start;
+            let elapsed_duration = current - self.from;
             if elapsed_duration > total_duration {
                 return 1.0;
             }
@@ -64,16 +64,16 @@ impl ProgressBar {
         W: Write,
     {
         let context = RenderContext::new(
-            self.start,
-            self.end,
-            self.title.clone(),
+            self.from,
+            self.to,
+            self.goal.clone(),
             Self::current_time(),
             self.calculate_progress_at(None),
         );
 
         match self
             .theme_registry
-            .get(&self.current_theme)
+            .get(&self.current_style)
             .unwrap_or(ThemeType::Default)
         {
             ThemeType::Default => {

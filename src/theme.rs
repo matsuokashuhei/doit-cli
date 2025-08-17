@@ -16,25 +16,25 @@ use std::io::Write;
 
 /// Context data shared across all themes
 pub struct RenderContext {
-    pub start: NaiveDateTime,
-    pub end: NaiveDateTime,
-    pub title: Option<String>,
+    pub from: NaiveDateTime,
+    pub to: NaiveDateTime,
+    pub goal: Option<String>,
     pub current_time: NaiveDateTime,
     pub progress: f64,
 }
 
 impl RenderContext {
     pub fn new(
-        start: NaiveDateTime,
-        end: NaiveDateTime,
-        title: Option<String>,
+        from: NaiveDateTime,
+        to: NaiveDateTime,
+        goal: Option<String>,
         current_time: NaiveDateTime,
         progress: f64,
     ) -> Self {
         Self {
-            start,
-            end,
-            title,
+            from,
+            to,
+            goal,
             current_time,
             progress,
         }
@@ -45,7 +45,7 @@ impl RenderContext {
     /// - Within 7 days: "mm-dd HH:MM"
     /// - Otherwise: "YYYY-mm-dd"
     pub fn get_time_format(&self) -> &'static str {
-        let duration = self.end - self.start;
+        let duration = self.to - self.from;
         let duration_hours = duration.num_hours();
 
         if duration_hours <= 24 {
@@ -59,22 +59,22 @@ impl RenderContext {
 
     /// Format start time according to duration
     pub fn format_start_time(&self) -> String {
-        self.start.format(self.get_time_format()).to_string()
+        self.from.format(self.get_time_format()).to_string()
     }
 
     /// Format end time according to duration
     pub fn format_end_time(&self) -> String {
-        self.end.format(self.get_time_format()).to_string()
+        self.to.format(self.get_time_format()).to_string()
     }
 
     /// Format start time for retro theme (always full datetime)
     pub fn format_start_time_retro(&self) -> String {
-        self.start.format("%Y-%m-%d %H:%M:%S").to_string()
+        self.from.format("%Y-%m-%d %H:%M:%S").to_string()
     }
 
     /// Format end time for retro theme (always full datetime)
     pub fn format_end_time_retro(&self) -> String {
-        self.end.format("%Y-%m-%d %H:%M:%S").to_string()
+        self.to.format("%Y-%m-%d %H:%M:%S").to_string()
     }
 
     /// Format total duration according to its length
@@ -83,7 +83,7 @@ impl RenderContext {
     /// - Within 7 days: "d h"
     /// - Otherwise: "d"
     pub fn format_total_time(&self) -> String {
-        let total_duration = self.end - self.start;
+        let total_duration = self.to - self.from;
         let total_minutes = total_duration.num_minutes();
         let total_hours = total_duration.num_hours();
         let total_days = total_duration.num_days();
@@ -131,28 +131,28 @@ impl RenderContext {
     }
 
     pub fn calculate_elapsed_time(&self) -> TimeDelta {
-        if self.current_time < self.start {
+        if self.current_time < self.from {
             // Before the start time: no time elapsed
             TimeDelta::zero()
-        } else if self.current_time > self.end {
+        } else if self.current_time > self.to {
             // After the end time: full duration elapsed
-            self.end - self.start
+            self.to - self.from
         } else {
             // During the period: current - start
-            self.current_time - self.start
+            self.current_time - self.from
         }
     }
 
     pub fn calculate_remaining_time(&self) -> TimeDelta {
-        if self.current_time < self.start {
+        if self.current_time < self.from {
             // Before the start time: full duration remaining
-            self.end - self.start
-        } else if self.current_time > self.end {
+            self.to - self.from
+        } else if self.current_time > self.to {
             // After the end time: no time remaining
             TimeDelta::zero()
         } else {
             // During the period: end - current
-            self.end - self.current_time
+            self.to - self.current_time
         }
     }
 
@@ -249,12 +249,12 @@ impl Theme for DefaultTheme {
 
         let mut row = 0;
 
-        // Display title if provided
-        if let Some(title) = &context.title {
+        // Display goal if provided
+        if let Some(goal) = &context.goal {
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(title.to_string().with(Color::Reset))
+                PrintStyledContent(goal.to_string().with(Color::Reset))
             )?;
             row += 1;
         }
@@ -332,13 +332,13 @@ impl Theme for RetroTheme {
 
         let mut row = 0;
 
-        // Display title with retro styling
-        if let Some(title) = &context.title {
-            let title_line = format!("[{}] FOCUS SESSION INITIATED", title);
+        // Display goal with retro styling
+        if let Some(goal) = &context.goal {
+            let goal_line = format!("[{}] FOCUS SESSION INITIATED", goal);
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(title_line.with(Color::Reset).bold())
+                PrintStyledContent(goal_line.with(Color::Reset).bold())
             )?;
             row += 1;
         }
@@ -539,19 +539,19 @@ impl Theme for SynthwaveTheme {
 
         let mut row = 0;
 
-        // Title with synthwave styling
-        if let Some(title) = &context.title {
-            let title_line = format!(
+        // Goal with synthwave styling
+        if let Some(goal) = &context.goal {
+            let goal_line = format!(
                 " {} {} {}",
                 "═".with(frame_color),
-                title.to_uppercase().with(title_accent_color),
+                goal.to_uppercase().with(title_accent_color),
                 "═".with(frame_color)
             );
 
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(title_line.with(title_accent_color).on(bg_color).bold())
+                PrintStyledContent(goal_line.with(title_accent_color).on(bg_color).bold())
             )?;
             row += 1;
         }
