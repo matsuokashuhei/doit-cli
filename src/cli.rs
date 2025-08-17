@@ -16,10 +16,7 @@ impl Args {
     #[allow(clippy::missing_panics_doc)]
     #[allow(clippy::needless_pass_by_value)]
     pub fn parse(matches: ArgMatches) -> Self {
-        let from = matches
-            .get_one::<DateTime<Local>>("from")
-            .copied()
-            .unwrap();
+        let from = matches.get_one::<DateTime<Local>>("from").copied().unwrap();
         let to = matches
             .get_one::<DateTime<Local>>("to")
             .copied()
