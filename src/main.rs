@@ -17,17 +17,17 @@ where
     let command = build_command();
     let args = Args::parse(command.get_matches());
     let progress_bar = ProgressBar::new(
-        args.start.naive_utc(),
-        args.end.naive_utc(),
-        args.title,
-        &args.theme,
+        args.from.naive_utc(),
+        args.to.naive_utc(),
+        args.goal,
+        &args.style,
     );
 
     let mut row;
     enable_raw_mode()?;
     loop {
         row = progress_bar.render(w)?;
-        if listen_exit_event(args.interval)? {
+        if listen_exit_event(60)? {
             break;
         }
     }
