@@ -19,7 +19,7 @@ where
     let progress_bar = ProgressBar::new(
         args.from.naive_utc(),
         args.to.naive_utc(),
-        args.goal,
+        args.title,
         &args.style,
     );
 

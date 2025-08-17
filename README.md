@@ -26,7 +26,7 @@ Just Do It!
 - 🎯 **Flexible time formats** (`2h`, `2025-08-10 09:00:00`, etc.)
 - 🎨 **Smart dynamic formatting** - automatically adjusts time display based on duration
 - 🔄 **Real-time updates** with optimized 60-second refresh
-- 📝 **Custom goal support** for motivational progress sessions
+- 📝 **Custom title support** for motivational progress sessions
 - 🎭 **Multiple styles** (default, retro, synthwave)
 - 🖥️ **Cross-platform** (Linux/macOS/Windows)
 - ⚡ **Colored output** with intelligent time calculations
@@ -79,14 +79,14 @@ doit --duration "3h"
 # Set custom start and end times
 doit --from "2025-08-10 09:00:00" --to "2025-08-10 17:00:00"
 
-# Add a custom goal to your progress session
-doit --from "2025-08-10 09:00:00" --duration "8h" --goal "Deep Work Session"
+# Add a custom title to your progress session
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
 
 # Use retro style for military-style motivation
-doit --from "2025-08-10 09:00:00" --duration "8h" --goal "JUST DO IT!" --style retro
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style retro
 
 # Use synthwave style for synthwave-style aesthetic
-doit --from "2025-08-10 09:00:00" --duration "8h" --goal "CYBER FOCUS" --style synthwave
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
 
 # Short form options
 doit -f "2025-08-10 09:00:00" -d "8h" -g "My Task"
@@ -97,12 +97,12 @@ doit -f "2025-08-10 09:00:00" -d "8h" -g "My Task"
 - `--from` / `-f` Start time (optional, default: current time)
 - `--to` / `-t` End time (mutually exclusive with --duration)
 - `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --to)
-- `--goal` / `-g` Goal message for motivation
+- `--title` / `-T` title message for motivation
 - `--style` / `-s` Display style [default|retro|synthwave]
 
 ## Example Output
 
-### Default Theme (With Custom Title)
+### Default Style (With Custom Title)
 
 ```
 Just Do It!
@@ -113,7 +113,7 @@ Just Do It!
 46 m remaining
 ```
 
-### Default Theme (Without Title)
+### Default Style (Without Title)
 
 ```
 08:00 → 17:00   |   92%   |   8h 14m / 9h
@@ -123,7 +123,7 @@ Just Do It!
 46 m remaining
 ```
 
-### Retro Theme Example
+### Retro Style Example
 
 ```
 [JUST DO IT!] FOCUS SESSION INITIATED
@@ -141,7 +141,7 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
 (Q) QUIT | (CTRL+C) ABORT
 ```
 
-### Synthwave Theme Example
+### Synthwave Style Example
 
 ![synthwave](images/synthwave.png)
 
@@ -206,7 +206,7 @@ cargo build --release  # Optimized build
 ## Recent Updates (v0.8.0)
 
 ### 🔄 Major CLI Refactoring (Breaking Changes)
-- **Renamed Arguments**: `--start` → `--from` (-f), `--end` → `--to` (-t), `--title` → `--goal` (-g), `--theme` → `--style` (-s)
+- **Renamed Arguments**: `--start` → `--from` (-f), `--end` → `--to` (-t), `--title` → `--title` (-T), `--theme` → `--style` (-s)
 - **Removed Arguments**: `--interval`, `--verbose` (fixed to 60-second updates for optimal performance)
 - **Enhanced Motivation**: Goal-focused messaging instead of generic titles
 - **Simplified Interface**: Cleaner, more intuitive argument structure
@@ -218,7 +218,7 @@ cargo build --release  # Optimized build
 
 ### 📋 Migration Guide
 - `doit --start "time" --end "time"` → `doit --from "time" --to "time"`
-- `doit --title "message"` → `doit --goal "message"`  
+- `doit --title "message"` → `doit --title "message"`
 - `doit --theme retro` → `doit --style retro`
 - Remove `--interval` and `--verbose` flags (automatic 60s updates)
 

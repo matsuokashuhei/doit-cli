@@ -3,8 +3,8 @@
 //! This module provides progress calculation and rendering functionality
 //! for time-based progress visualization with color support.
 
-use crate::theme::{
-    DefaultTheme, RenderContext, RetroTheme, SynthwaveTheme, Theme, ThemeRegistry, ThemeType,
+use crate::style::{
+    DefaultStyle, RenderContext, RetroStyle, Style, StyleRegistry, StyleType, SynthwaveStyle,
 };
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime, Timelike};
@@ -13,8 +13,8 @@ use std::io::Write;
 pub struct ProgressBar {
     pub from: NaiveDateTime,
     pub to: NaiveDateTime,
-    pub goal: Option<String>,
-    pub theme_registry: ThemeRegistry,
+    pub title: Option<String>,
+    pub style_registry: StyleRegistry,
     pub current_style: String,
 }
 
@@ -23,14 +23,14 @@ impl ProgressBar {
     pub fn new(
         from: NaiveDateTime,
         to: NaiveDateTime,
-        goal: Option<String>,
+        title: Option<String>,
         style_name: &str,
     ) -> Self {
         ProgressBar {
             from,
             to,
-            goal,
-            theme_registry: ThemeRegistry::new(),
+            title,
+            style_registry: StyleRegistry::new(),
             current_style: style_name.to_string(),
         }
     }
@@ -66,27 +66,27 @@ impl ProgressBar {
         let context = RenderContext::new(
             self.from,
             self.to,
-            self.goal.clone(),
+            self.title.clone(),
             Self::current_time(),
             self.calculate_progress_at(None),
         );
 
         match self
-            .theme_registry
+            .style_registry
             .get(&self.current_style)
-            .unwrap_or(ThemeType::Default)
+            .unwrap_or(StyleType::Default)
         {
-            ThemeType::Default => {
-                let theme = DefaultTheme;
-                theme.render(&context, w)
+            StyleType::Default => {
+                let style = DefaultStyle;
+                style.render(&context, w)
             }
-            ThemeType::Retro => {
-                let theme = RetroTheme;
-                theme.render(&context, w)
+            StyleType::Retro => {
+                let style = RetroStyle;
+                style.render(&context, w)
             }
-            ThemeType::Synthwave => {
-                let theme = SynthwaveTheme;
-                theme.render(&context, w)
+            StyleType::Synthwave => {
+                let style = SynthwaveStyle;
+                style.render(&context, w)
             }
         }
     }

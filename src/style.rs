@@ -1,6 +1,6 @@
-//! Theme system for progress bar rendering
+//! Style system for progress bar rendering
 //!
-//! This module provides a flexible theme system that allows different
+//! This module provides a flexible style system that allows different
 //! visual styles for the progress bar display.
 
 use anyhow::Result;
@@ -14,11 +14,11 @@ use crossterm::{
 use std::collections::HashMap;
 use std::io::Write;
 
-/// Context data shared across all themes
+/// Context data shared across all styles
 pub struct RenderContext {
     pub from: NaiveDateTime,
     pub to: NaiveDateTime,
-    pub goal: Option<String>,
+    pub title: Option<String>,
     pub current_time: NaiveDateTime,
     pub progress: f64,
 }
@@ -27,14 +27,14 @@ impl RenderContext {
     pub fn new(
         from: NaiveDateTime,
         to: NaiveDateTime,
-        goal: Option<String>,
+        title: Option<String>,
         current_time: NaiveDateTime,
         progress: f64,
     ) -> Self {
         Self {
             from,
             to,
-            goal,
+            title,
             current_time,
             progress,
         }
@@ -67,12 +67,12 @@ impl RenderContext {
         self.to.format(self.get_time_format()).to_string()
     }
 
-    /// Format start time for retro theme (always full datetime)
+    /// Format start time for retro style (always full datetime)
     pub fn format_start_time_retro(&self) -> String {
         self.from.format("%Y-%m-%d %H:%M:%S").to_string()
     }
 
-    /// Format end time for retro theme (always full datetime)
+    /// Format end time for retro style (always full datetime)
     pub fn format_end_time_retro(&self) -> String {
         self.to.format("%Y-%m-%d %H:%M:%S").to_string()
     }
@@ -219,42 +219,42 @@ pub fn get_terminal_width() -> usize {
         .unwrap_or(58)
 }
 
-/// Theme types enum
+/// Style types enum
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ThemeType {
+pub enum StyleType {
     Default,
     Retro,
     Synthwave,
 }
 
-/// Base trait for all themes
-pub trait Theme: Send + Sync {
+/// Base trait for all styles
+pub trait Style: Send + Sync {
     fn name(&self) -> &'static str;
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16>;
 }
 
-/// Default theme implementation
-pub struct DefaultTheme;
+/// Default style implementation
+pub struct DefaultStyle;
 
-impl Theme for DefaultTheme {
+impl Style for DefaultStyle {
     fn name(&self) -> &'static str {
         "default"
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
-        let bar = DefaultTheme::build_bar(context.progress);
+        let bar = DefaultStyle::build_bar(context.progress);
 
         // Clear screen and reset cursor
         queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
 
         let mut row = 0;
 
-        // Display goal if provided
-        if let Some(goal) = &context.goal {
+        // Display title if provided
+        if let Some(title) = &context.title {
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(goal.to_string().with(Color::Reset))
+                PrintStyledContent(title.to_string().with(Color::Reset))
             )?;
             row += 1;
         }
@@ -305,7 +305,7 @@ impl Theme for DefaultTheme {
     }
 }
 
-impl DefaultTheme {
+impl DefaultStyle {
     fn build_bar(progress: f64) -> String {
         let bar_width = get_terminal_width();
         let filled_chars = (progress * bar_width as f64).round() as usize;
@@ -315,30 +315,30 @@ impl DefaultTheme {
     }
 }
 
-/// Retro theme implementation
-pub struct RetroTheme;
+/// Retro style implementation
+pub struct RetroStyle;
 
-impl Theme for RetroTheme {
+impl Style for RetroStyle {
     fn name(&self) -> &'static str {
         "retro"
     }
 
     fn render<W: Write>(&self, context: &RenderContext, w: &mut W) -> Result<u16> {
         let bar_width = get_terminal_width();
-        let bar = RetroTheme::build_retro_bar(context.progress);
+        let bar = RetroStyle::build_retro_bar(context.progress);
 
         // Clear screen and reset cursor
         queue!(w, ResetColor, Clear(ClearType::All), Hide)?;
 
         let mut row = 0;
 
-        // Display goal with retro styling
-        if let Some(goal) = &context.goal {
-            let goal_line = format!("[{}] FOCUS SESSION INITIATED", goal);
+        // Display title with retro styling
+        if let Some(title) = &context.title {
+            let title_line = format!("[{}] FOCUS SESSION INITIATED", title);
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(goal_line.with(Color::Reset).bold())
+                PrintStyledContent(title_line.with(Color::Reset).bold())
             )?;
             row += 1;
         }
@@ -421,7 +421,7 @@ impl Theme for RetroTheme {
         row += 1;
 
         // Status message
-        let status_message = RetroTheme::get_retro_status_message(context.progress);
+        let status_message = RetroStyle::get_retro_status_message(context.progress);
         let status_line = format!("STATUS: > {}", status_message);
         queue!(
             w,
@@ -452,7 +452,7 @@ impl Theme for RetroTheme {
     }
 }
 
-impl RetroTheme {
+impl RetroStyle {
     fn build_retro_bar(progress: f64) -> String {
         let bar_width = get_terminal_width();
         // Account for the brackets, so inner bar width is bar_width - 2
@@ -476,10 +476,10 @@ impl RetroTheme {
     }
 }
 
-/// Synthwave theme implementation
-pub struct SynthwaveTheme;
+/// Synthwave style implementation
+pub struct SynthwaveStyle;
 
-impl Theme for SynthwaveTheme {
+impl Style for SynthwaveStyle {
     fn name(&self) -> &'static str {
         "synthwave"
     }
@@ -539,19 +539,19 @@ impl Theme for SynthwaveTheme {
 
         let mut row = 0;
 
-        // Goal with synthwave styling
-        if let Some(goal) = &context.goal {
-            let goal_line = format!(
+        // title with synthwave styling
+        if let Some(title) = &context.title {
+            let title_line = format!(
                 " {} {} {}",
                 "═".with(frame_color),
-                goal.to_uppercase().with(title_accent_color),
+                title.to_uppercase().with(title_accent_color),
                 "═".with(frame_color)
             );
 
             queue!(
                 w,
                 MoveTo(0, row),
-                PrintStyledContent(goal_line.with(title_accent_color).on(bg_color).bold())
+                PrintStyledContent(title_line.with(title_accent_color).on(bg_color).bold())
             )?;
             row += 1;
         }
@@ -579,7 +579,7 @@ impl Theme for SynthwaveTheme {
         let bar_inner_width = bar_width.saturating_sub(fixed_parts_width);
 
         // Create the progress bar with the correct width
-        let bar = SynthwaveTheme::build_synthwave_bar(context.progress, bar_inner_width);
+        let bar = SynthwaveStyle::build_synthwave_bar(context.progress, bar_inner_width);
 
         // The bar is already the correct width, no need to adjust
         let adjusted_bar = bar;
@@ -652,7 +652,7 @@ impl Theme for SynthwaveTheme {
     }
 }
 
-impl SynthwaveTheme {
+impl SynthwaveStyle {
     fn build_synthwave_bar(progress: f64, available_width: usize) -> String {
         let filled_chars = (progress * available_width as f64).round() as usize;
         let filled = "█".repeat(filled_chars);
@@ -661,36 +661,36 @@ impl SynthwaveTheme {
     }
 }
 
-/// Theme registry for managing all available themes
-pub struct ThemeRegistry {
-    themes: HashMap<String, ThemeType>,
+/// Style registry for managing all available styles
+pub struct StyleRegistry {
+    styles: HashMap<String, StyleType>,
 }
 
-impl ThemeRegistry {
+impl StyleRegistry {
     pub fn new() -> Self {
         let mut registry = Self {
-            themes: HashMap::new(),
+            styles: HashMap::new(),
         };
-        registry.register("default", ThemeType::Default);
-        registry.register("retro", ThemeType::Retro);
-        registry.register("synthwave", ThemeType::Synthwave);
+        registry.register("default", StyleType::Default);
+        registry.register("retro", StyleType::Retro);
+        registry.register("synthwave", StyleType::Synthwave);
         registry
     }
 
-    pub fn register(&mut self, name: &str, theme_type: ThemeType) {
-        self.themes.insert(name.to_string(), theme_type);
+    pub fn register(&mut self, name: &str, style_type: StyleType) {
+        self.styles.insert(name.to_string(), style_type);
     }
 
-    pub fn get(&self, name: &str) -> Option<ThemeType> {
-        self.themes.get(name).copied()
+    pub fn get(&self, name: &str) -> Option<StyleType> {
+        self.styles.get(name).copied()
     }
 
-    pub fn list_themes(&self) -> Vec<&str> {
-        self.themes.keys().map(|k| k.as_str()).collect()
+    pub fn list_styles(&self) -> Vec<&str> {
+        self.styles.keys().map(|k| k.as_str()).collect()
     }
 }
 
-impl Default for ThemeRegistry {
+impl Default for StyleRegistry {
     fn default() -> Self {
         Self::new()
     }
@@ -904,7 +904,7 @@ mod tests {
             NaiveDateTime::parse_from_str("2025-08-16 18:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         let context = RenderContext::new(start, end, None, start, 0.0);
 
-        // Retro theme should always use full YYYY-mm-dd HH:MM:SS format
+        // Retro style should always use full YYYY-mm-dd HH:MM:SS format
         assert_eq!(context.format_start_time_retro(), "2025-08-16 10:00:00");
         assert_eq!(context.format_end_time_retro(), "2025-08-16 18:00:00");
 

@@ -7,7 +7,7 @@ use std::process::exit;
 pub struct Args {
     pub from: DateTime<Local>,
     pub to: DateTime<Local>,
-    pub goal: Option<String>,
+    pub title: Option<String>,
     pub style: String,
 }
 
@@ -24,9 +24,9 @@ impl Args {
 
         if to < from {
             println!(
-                "End time {to} must be after start time {from}.",
-                from = from.format("%Y-%m-%d %H:%M:%S"),
-                to = to.format("%Y-%m-%d %H:%M:%S")
+                "to {} must be after from {}.",
+                to.format("%Y-%m-%d %H:%M:%S"),
+                from.format("%Y-%m-%d %H:%M:%S")
             );
             exit(1);
         }
@@ -34,7 +34,7 @@ impl Args {
         Args {
             from,
             to,
-            goal: matches.get_one::<String>("goal").cloned(),
+            title: matches.get_one::<String>("title").cloned(),
             style: matches
                 .get_one::<String>("style")
                 .cloned()
@@ -74,11 +74,11 @@ pub fn build_command() -> Command {
                 .help("Duration (mutually exclusive with --to)"),
         )
         .arg(
-            clap::Arg::new("goal")
-                .short('g')
-                .long("goal")
+            clap::Arg::new("title")
+                .short('T')
+                .long("title")
                 .value_parser(clap::value_parser!(String))
-                .help("Goal message"),
+                .help("Title message"),
         )
         .arg(
             clap::Arg::new("style")
@@ -476,39 +476,39 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_with_goal() {
+    fn test_parse_with_title() {
         let args = vec![
             "doit",
             "--from",
             "2025-01-01 10:20:30",
             "--to",
             "2025-01-31 23:59:59",
-            "--goal",
-            "My Custom Goal",
+            "--title",
+            "My Custom Title",
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.goal, Some("My Custom Goal".to_string()));
+        assert_eq!(args.title, Some("My Custom Title".to_string()));
     }
 
     #[test]
-    fn test_parse_with_goal_short() {
+    fn test_parse_with_title_short() {
         let args = vec![
             "doit",
             "--from",
             "2025-01-01 10:20:30",
             "--to",
             "2025-01-31 23:59:59",
-            "-g",
-            "Short Goal",
+            "-T",
+            "Short Title",
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.goal, Some("Short Goal".to_string()));
+        assert_eq!(args.title, Some("Short Title".to_string()));
     }
 
     #[test]
-    fn test_parse_without_goal() {
+    fn test_parse_without_title() {
         let args = vec![
             "doit",
             "--from",
@@ -518,7 +518,7 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.goal, None);
+        assert_eq!(args.title, None);
         assert_eq!(args.style, "default");
     }
 

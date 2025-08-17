@@ -5,11 +5,11 @@
 
 pub mod cli;
 pub mod progress_bar;
-pub mod theme;
+pub mod style;
 
 // Re-export commonly used types
 pub use cli::{build_command, Args};
 pub use progress_bar::ProgressBar;
-pub use theme::{
-    DefaultTheme, RenderContext, RetroTheme, SynthwaveTheme, Theme, ThemeRegistry, ThemeType,
+pub use style::{
+    DefaultStyle, RenderContext, RetroStyle, Style, StyleRegistry, StyleType, SynthwaveStyle,
 };
