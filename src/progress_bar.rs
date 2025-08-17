@@ -3,35 +3,35 @@
 //! This module provides progress calculation and rendering functionality
 //! for time-based progress visualization with color support.
 
-use crate::theme::{
-    DefaultTheme, RenderContext, RetroTheme, SynthwaveTheme, Theme, ThemeRegistry, ThemeType,
+use crate::style::{
+    DefaultStyle, RenderContext, RetroStyle, Style, StyleRegistry, StyleType, SynthwaveStyle,
 };
 use anyhow::Result;
 use chrono::{Local, NaiveDateTime, Timelike};
 use std::io::Write;
 
 pub struct ProgressBar {
-    pub start: NaiveDateTime,
-    pub end: NaiveDateTime,
+    pub from: NaiveDateTime,
+    pub to: NaiveDateTime,
     pub title: Option<String>,
-    pub theme_registry: ThemeRegistry,
-    pub current_theme: String,
+    pub style_registry: StyleRegistry,
+    pub current_style: String,
 }
 
 impl ProgressBar {
     #[allow(clippy::must_use_candidate)]
     pub fn new(
-        start: NaiveDateTime,
-        end: NaiveDateTime,
+        from: NaiveDateTime,
+        to: NaiveDateTime,
         title: Option<String>,
-        theme_name: &str,
+        style_name: &str,
     ) -> Self {
         ProgressBar {
-            start,
-            end,
+            from,
+            to,
             title,
-            theme_registry: ThemeRegistry::new(),
-            current_theme: theme_name.to_string(),
+            style_registry: StyleRegistry::new(),
+            current_style: style_name.to_string(),
         }
     }
 
@@ -42,11 +42,11 @@ impl ProgressBar {
     #[allow(clippy::cast_precision_loss)]
     fn calculate_progress_at(&self, current: Option<NaiveDateTime>) -> f64 {
         if let Some(current) = current {
-            let total_duration = self.end - self.start;
+            let total_duration = self.to - self.from;
             if total_duration.num_seconds() == 0 {
                 return 1.0;
             }
-            let elapsed_duration = current - self.start;
+            let elapsed_duration = current - self.from;
             if elapsed_duration > total_duration {
                 return 1.0;
             }
@@ -64,29 +64,29 @@ impl ProgressBar {
         W: Write,
     {
         let context = RenderContext::new(
-            self.start,
-            self.end,
+            self.from,
+            self.to,
             self.title.clone(),
             Self::current_time(),
             self.calculate_progress_at(None),
         );
 
         match self
-            .theme_registry
-            .get(&self.current_theme)
-            .unwrap_or(ThemeType::Default)
+            .style_registry
+            .get(&self.current_style)
+            .unwrap_or(StyleType::Default)
         {
-            ThemeType::Default => {
-                let theme = DefaultTheme;
-                theme.render(&context, w)
+            StyleType::Default => {
+                let style = DefaultStyle;
+                style.render(&context, w)
             }
-            ThemeType::Retro => {
-                let theme = RetroTheme;
-                theme.render(&context, w)
+            StyleType::Retro => {
+                let style = RetroStyle;
+                style.render(&context, w)
             }
-            ThemeType::Synthwave => {
-                let theme = SynthwaveTheme;
-                theme.render(&context, w)
+            StyleType::Synthwave => {
+                let style = SynthwaveStyle;
+                style.render(&context, w)
             }
         }
     }

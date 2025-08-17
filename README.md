@@ -9,7 +9,7 @@ Set a duration or deadline, and see your progress in real time.
 Use this tool to maximize your concentration and motivation!
 
 ```
-$ doit -s "2025-08-12 08:00:00" -d 9h -t "Just Do It!"
+$ doit -f "2025-08-12 08:00:00" -d 9h -g "Just Do It!"
 
 Just Do It!
 08:00 → 17:00   |   92%   |   8h 14m / 9h
@@ -22,12 +22,12 @@ Just Do It!
 
 ## Features
 
-- ⏱️ **Time-based progress bar** with real-time updates
+- ⏱️ **Time-based progress bar** with real-time updates (60-second intervals)
 - 🎯 **Flexible time formats** (`2h`, `2025-08-10 09:00:00`, etc.)
 - 🎨 **Smart dynamic formatting** - automatically adjusts time display based on duration
-- 🔄 **Real-time updates** with customizable intervals
-- 📝 **Custom title support** for progress sessions
-- 🎭 **Multiple themes** (default, retro, synthwave)
+- 🔄 **Real-time updates** with optimized 60-second refresh
+- 📝 **Custom title support** for motivational progress sessions
+- 🎭 **Multiple styles** (default, retro, synthwave)
 - 🖥️ **Cross-platform** (Linux/macOS/Windows)
 - ⚡ **Colored output** with intelligent time calculations
 
@@ -77,34 +77,32 @@ Download the latest release from [GitHub Releases](https://github.com/matsuokash
 doit --duration "3h"
 
 # Set custom start and end times
-doit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
+doit --from "2025-08-10 09:00:00" --to "2025-08-10 17:00:00"
 
 # Add a custom title to your progress session
-doit --start "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
 
-# Use retro theme for military-style motivation
-doit --start "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --theme retro
+# Use retro style for military-style motivation
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style retro
 
-# Use synthwave theme for synthwave-style aesthetic
-doit --start "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --theme synthwave
+# Use synthwave style for synthwave-style aesthetic
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
 
 # Short form options
-doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
+doit -f "2025-08-10 09:00:00" -d "8h" -g "My Task"
 ```
 
 ### Options
 
-- `--start` / `-s` Start time (default: now)
-- `--end` / `-e` End time
-- `--duration` / `-d` Duration (e.g. `25m`, `2h`)
-- `--title` / `-t` Custom title for the progress session
-- `--theme` Theme for the progress display (default, retro, synthwave)
-- `--interval` / `-i` Update interval (seconds)
-- `--verbose` / `-v` Display verbose output
+- `--from` / `-f` Start time (optional, default: current time)
+- `--to` / `-t` End time (mutually exclusive with --duration)
+- `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --to)
+- `--title` / `-T` title message for motivation
+- `--style` / `-s` Display style [default|retro|synthwave]
 
 ## Example Output
 
-### Default Theme (With Custom Title)
+### Default Style (With Custom Title)
 
 ```
 Just Do It!
@@ -115,7 +113,7 @@ Just Do It!
 46 m remaining
 ```
 
-### Default Theme (Without Title)
+### Default Style (Without Title)
 
 ```
 08:00 → 17:00   |   92%   |   8h 14m / 9h
@@ -125,7 +123,7 @@ Just Do It!
 46 m remaining
 ```
 
-### Retro Theme Example
+### Retro Style Example
 
 ```
 [JUST DO IT!] FOCUS SESSION INITIATED
@@ -143,7 +141,7 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
 (Q) QUIT | (CTRL+C) ABORT
 ```
 
-### Synthwave Theme Example
+### Synthwave Style Example
 
 ![synthwave](images/synthwave.png)
 
@@ -162,7 +160,7 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
 
 ### Short Sessions (≤24 hours)
 ```bash
-$ doit -s "14:00:00" -d "2h" -t "Focus Session"
+$ doit -f "14:00:00" -d "2h" -g "Focus Session"
 
 Focus Session
 14:00 → 16:00   |   25%   |   30m / 2h
@@ -205,22 +203,24 @@ cargo fmt         # Code formatting
 cargo build --release  # Optimized build
 ```
 
-## Recent Updates (v0.7.0)
+## Recent Updates (v0.8.0)
 
-### ✨ New Features
-- **Smart Dynamic Formatting**: Time displays automatically adapt to session duration
-- **Enhanced Time Calculation**: Accurate progress for past, present, and future time ranges
-- **Improved Total Duration Display**: 4-tier formatting system for better readability
-
-### 🐛 Bug Fixes
-- Fixed negative elapsed time display for past sessions
-- Corrected remaining time calculations across all time scenarios
-- Resolved timezone handling issues
+### 🔄 Major CLI Refactoring (Breaking Changes)
+- **Renamed Arguments**: `--start` → `--from` (-f), `--end` → `--to` (-t), `--title` → `--title` (-T), `--theme` → `--style` (-s)
+- **Removed Arguments**: `--interval`, `--verbose` (fixed to 60-second updates for optimal performance)
+- **Enhanced Motivation**: Goal-focused messaging instead of generic titles
+- **Simplified Interface**: Cleaner, more intuitive argument structure
 
 ### 🧪 Testing
-- Expanded test coverage to 36 comprehensive test cases
-- Added edge case validation for all time range scenarios
-- Enhanced theme consistency testing
+- Updated comprehensive test suite (35 test cases)
+- All functionality validated with new argument structure
+- Maintained backward compatibility for time parsing
+
+### 📋 Migration Guide
+- `doit --start "time" --end "time"` → `doit --from "time" --to "time"`
+- `doit --title "message"` → `doit --title "message"`
+- `doit --theme retro` → `doit --style retro`
+- Remove `--interval` and `--verbose` flags (automatic 60s updates)
 
 ## License
 
