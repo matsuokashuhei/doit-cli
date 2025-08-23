@@ -1,15 +1,10 @@
-//! pb - A CLI progress bar tool for time-based visualization
-//!
-//! This library provides the core functionality for the pb CLI tool,
-//! including time parsing, progress calculation, and error handling.
-
 pub mod cli;
-pub mod progress_bar;
-pub mod style;
+pub mod error;
+pub mod progress;
+pub mod renderer;
+pub mod timespan;
 
-// Re-export commonly used types
 pub use cli::{build_command, Args};
-pub use progress_bar::ProgressBar;
-pub use style::{
-    DefaultStyle, RenderContext, RetroStyle, Style, StyleRegistry, StyleType, SynthwaveStyle,
-};
+pub use progress::Progress;
+pub use renderer::{DefaultRenderer, RetroRenderer, Style, StyledRenderer, SynthwaveRenderer};
+pub use timespan::Timespan;

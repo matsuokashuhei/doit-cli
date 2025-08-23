@@ -1,14 +1,16 @@
+use crate::Style;
 use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike};
 use clap::{ArgMatches, Command};
 use regex::Regex;
 use std::process::exit;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Args {
     pub from: DateTime<Local>,
     pub to: DateTime<Local>,
+    pub interval: u64,
     pub title: Option<String>,
-    pub style: String,
+    pub style: Style,
 }
 
 impl Args {
@@ -30,15 +32,12 @@ impl Args {
             );
             exit(1);
         }
-
         Args {
+            title: matches.get_one::<String>("title").cloned(),
             from,
             to,
-            title: matches.get_one::<String>("title").cloned(),
-            style: matches
-                .get_one::<String>("style")
-                .cloned()
-                .unwrap_or_else(|| "default".to_string()),
+            interval: *matches.get_one::<u64>("interval").unwrap(),
+            style: matches.get_one::<Style>("style").cloned().unwrap(),
         }
     }
 }
@@ -47,6 +46,13 @@ pub fn build_command() -> Command {
     Command::new("doit")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Just Do It! - Progress Bar Tool for Motivation")
+        .arg(
+            clap::Arg::new("title")
+                .short('T')
+                .long("title")
+                .value_parser(clap::value_parser!(String))
+                .help("Title message"),
+        )
         .arg(
             clap::Arg::new("from")
                 .short('f')
@@ -74,17 +80,19 @@ pub fn build_command() -> Command {
                 .help("Duration (mutually exclusive with --to)"),
         )
         .arg(
-            clap::Arg::new("title")
-                .short('T')
-                .long("title")
-                .value_parser(clap::value_parser!(String))
-                .help("Title message"),
+            clap::Arg::new("interval")
+                .required(false)
+                .short('i')
+                .long("interval")
+                .value_parser(clap::value_parser!(u64).range(1..60))
+                .default_value("10")
+                .help("Refresh interval in seconds"),
         )
         .arg(
             clap::Arg::new("style")
                 .short('s')
                 .long("style")
-                .value_parser(clap::value_parser!(String))
+                .value_parser(parse_style)
                 .default_value("default")
                 .help("Display style [default|retro|synthwave]"),
         )
@@ -184,6 +192,10 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
         }
     }
     Err(format!("Invalid duration format: {s}"))
+}
+
+fn parse_style(s: &str) -> Result<Style, String> {
+    Ok(Style::from_name(s))
 }
 
 #[cfg(test)]
@@ -519,7 +531,6 @@ mod tests {
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.title, None);
-        assert_eq!(args.style, "default");
     }
 
     #[test]
@@ -535,7 +546,7 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.style, "retro");
+        assert_eq!(args.style, Style::Retro);
     }
 
     #[test]
@@ -551,6 +562,6 @@ mod tests {
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.style, "default");
+        assert_eq!(args.style, Style::Default);
     }
 }
