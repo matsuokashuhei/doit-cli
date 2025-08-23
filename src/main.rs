@@ -1,12 +1,17 @@
-// use anyhow::{Ok, Result};
 use anyhow::Result;
+use chrono::Local;
+use crossterm::cursor::Hide;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::terminal::{Clear, ClearType};
 use crossterm::{
     cursor::{MoveTo, Show},
     queue,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use doit::{build_command, Args, ProgressBar};
+use doit::timespan::Timespan;
+use doit::{
+    build_command, Args, DefaultRenderer, RetroRenderer, Style, StyledRenderer, SynthwaveRenderer,
+};
 use std::io::{stdout, Write};
 use std::time::Duration;
 
@@ -16,23 +21,33 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
-    let progress_bar = ProgressBar::new(
-        args.from.naive_utc(),
-        args.to.naive_utc(),
-        args.title,
-        &args.style,
-    );
+    let timespan = Timespan::new(args.from.naive_utc(), args.to.naive_utc())?;
 
     let mut row;
-    enable_raw_mode()?;
+    setup_terminal(w)?;
     loop {
-        row = progress_bar.render(w)?;
-        if listen_exit_event(60)? {
+        let current_time = Local::now().naive_utc();
+        let progress = timespan.progress(current_time);
+        row = match args.style {
+            Style::Default => {
+                let renderer = DefaultRenderer::new(args.title.clone(), progress);
+                renderer.render(w)?
+            }
+            Style::Retro => {
+                let renderer = RetroRenderer::new(args.title.clone(), progress);
+                renderer.render(w)?
+            }
+            Style::Synthwave => {
+                let renderer = SynthwaveRenderer::new(args.title.clone(), progress);
+                renderer.render(w)?
+            }
+        };
+        w.flush()?;
+        if listen_exit_event(args.interval)? {
             break;
         }
     }
     reset_terminal(w, row)?;
-    disable_raw_mode()?;
     Ok(())
 }
 
@@ -62,12 +77,23 @@ fn listen_exit_event(timeout: u64) -> Result<bool> {
     Ok(false)
 }
 
+fn setup_terminal<W>(w: &mut W) -> Result<()>
+where
+    W: Write,
+{
+    enable_raw_mode()?;
+    queue!(w, Clear(ClearType::All), Hide)?;
+    w.flush()?;
+    Ok(())
+}
+
 fn reset_terminal<W>(w: &mut W, row: u16) -> Result<()>
 where
     W: Write,
 {
     queue!(w, MoveTo(0, row), Show)?;
     w.flush()?;
+    disable_raw_mode()?;
     Ok(())
 }
 

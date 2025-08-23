@@ -9,7 +9,7 @@ Set a duration or deadline, and see your progress in real time.
 Use this tool to maximize your concentration and motivation!
 
 ```
-$ doit -f "2025-08-12 08:00:00" -d 9h -g "Just Do It!"
+$ doit -f "2025-08-12 08:00:00" -d 9h -T "Just Do It!"
 
 Just Do It!
 08:00 → 17:00   |   92%   |   8h 14m / 9h
@@ -89,7 +89,7 @@ doit --from "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style 
 doit --from "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
 
 # Short form options
-doit -f "2025-08-10 09:00:00" -d "8h" -g "My Task"
+doit -f "2025-08-10 09:00:00" -d "8h" -T "My Task"
 ```
 
 ### Options
@@ -160,7 +160,7 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
 
 ### Short Sessions (≤24 hours)
 ```bash
-$ doit -f "14:00:00" -d "2h" -g "Focus Session"
+$ doit -f "14:00:00" -d "2h" -T "Focus Session"
 
 Focus Session
 14:00 → 16:00   |   25%   |   30m / 2h
