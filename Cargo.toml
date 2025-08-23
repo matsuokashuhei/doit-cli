@@ -1,6 +1,6 @@
 [package]
 name = "doit"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 authors = ["Shuhei Matsuoka <matsuokashuheiii@gmail.com>"]
 description = "A CLI progress monitor (doit) for time-based visualization"
@@ -13,7 +13,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 colored = "3.0.0"
 crossterm = "0.29.0"
 anyhow = "1.0.99"
-thiserror = "2.0.14"
+thiserror = "2.0.16"
 regex = "1.11.1"
 
 [dev-dependencies]
