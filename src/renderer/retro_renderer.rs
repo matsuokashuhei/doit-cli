@@ -93,6 +93,9 @@ impl RetroRenderer {
         format!("[REMAINING] {}", self.progress.format_remaining())
     }
 
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_precision_loss)]
     fn build_bar(&self, width: usize) -> String {
         let lhs = "[";
         let rhs = "]";
@@ -112,6 +115,7 @@ impl RetroRenderer {
         }
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn build_status(&self) -> String {
         let status = match (self.progress.ratio * 100.0) as i32 {
             0..=10 => "MISSION INITIATED. LOCK AND LOAD, SOLDIER!",
@@ -122,7 +126,7 @@ impl RetroRenderer {
             91..=99 => "FINAL ASSAULT! BREAK THROUGH THE ENEMY LINES!",
             _ => "MISSION ACCOMPLISHED! EXCELLENT WORK, SOLDIER!",
         };
-        format!("STATUS: > {}", status)
+        format!("STATUS: > {status}")
     }
 }
 
@@ -138,30 +142,34 @@ mod tests {
     // fn test_build_title() {
     //     let title = "Just Do It!";
     //     let expected = "[JUST DO IT!] FOCUS SESSION INITIATED";
-    //     let result = RetroRenderer::build_title(title);
+    //     let progress = progress::Progress::new(
+    //         timespan,
+    //         DateTime::from_timestamp(current, 0).unwrap().naive_utc(),
+    //     );
+    //     let renderer = RetroRenderer::new(Some(title), progress);
     //     assert_eq!(result, expected);
     // }
 
-    // #[test]
-    // fn test_build_bar() {
-    //     let test_cases = vec![
-    //         (0, 100, 0, "[░░░░░░░░░░░░░░░░░░]"),
-    //         (0, 100, 50, "[█████████░░░░░░░░░]"),
-    //         (0, 100, 100, "[██████████████████]"),
-    //     ];
-    //     for (start, end, current, expected) in test_cases {
-    //         let timespan = Timespan::new(
-    //             DateTime::from_timestamp(start, 0).unwrap().naive_utc(),
-    //             DateTime::from_timestamp(end, 0).unwrap().naive_utc(),
-    //         )
-    //         .unwrap();
-    //         let progress = progress::Progress::new(
-    //             timespan,
-    //             DateTime::from_timestamp(current, 0).unwrap().naive_utc(),
-    //         );
-    //         let renderer = RetroRenderer::new(progress);
-    //         let bar = renderer.build_bar(20);
-    //         assert_eq!(bar, expected)
-    //     }
-    // }
+    #[test]
+    fn test_build_bar() {
+        let test_cases = vec![
+            (0, 100, 0, "[░░░░░░░░░░░░░░░░░░]"),
+            (0, 100, 50, "[█████████░░░░░░░░░]"),
+            (0, 100, 100, "[██████████████████]"),
+        ];
+        for (start, end, current, expected) in test_cases {
+            let timespan = Timespan::new(
+                DateTime::from_timestamp(start, 0).unwrap().naive_utc(),
+                DateTime::from_timestamp(end, 0).unwrap().naive_utc(),
+            )
+            .unwrap();
+            let progress = progress::Progress::new(
+                timespan,
+                DateTime::from_timestamp(current, 0).unwrap().naive_utc(),
+            );
+            let renderer = RetroRenderer::new(None, progress);
+            let bar = renderer.build_bar(20);
+            assert_eq!(bar, expected);
+        }
+    }
 }

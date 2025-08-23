@@ -16,6 +16,7 @@ pub enum Style {
 }
 
 impl Style {
+    #[must_use]
     pub fn from_name(name: &str) -> Self {
         match name.to_lowercase().as_str() {
             "retro" => Style::Retro,
@@ -26,12 +27,19 @@ impl Style {
 }
 
 pub trait StyledRenderer {
+    #[allow(clippy::missing_errors_doc)]
     fn new(title: Option<String>, progress: Progress) -> Self;
+
+    #[allow(clippy::missing_errors_doc)]
     fn render<W: Write>(&self, w: &mut W) -> Result<u16>;
+
+    #[must_use]
+    #[allow(clippy::missing_errors_doc)]
     fn terminal_width() -> usize {
         size().map_or(80, |(w, _)| w as usize)
     }
 
+    #[allow(clippy::missing_errors_doc)]
     fn render_content<W: Write>(w: &mut W, content: &str, row: u16) -> Result<u16> {
         queue!(
             w,
@@ -42,11 +50,13 @@ pub trait StyledRenderer {
         Ok(row + 1)
     }
 
+    #[allow(clippy::missing_errors_doc)]
     fn render_empty_line<W: Write>(w: &mut W, row: u16) -> Result<u16> {
         Self::render_content(w, "", row)?;
         Ok(row + 1)
     }
 
+    #[allow(clippy::missing_errors_doc)]
     fn render_background<W: Write>(w: &mut W, color: Color) -> Result<()> {
         queue!(w, SetBackgroundColor(color))?;
         Ok(())

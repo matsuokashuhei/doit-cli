@@ -46,8 +46,8 @@ impl DefaultRenderer {
         let to = self.progress.timespan.format_to();
         let ratio = format!("{:.0}%", self.progress.ratio * 100.0);
         let space = " ".repeat(3);
-        vec![
-            format!("{} → {}", from, to),
+        [
+            format!("{from} → {to}"),
             ratio,
             format!(
                 "{} / {}",
@@ -55,7 +55,7 @@ impl DefaultRenderer {
                 self.progress.timespan.format_duration()
             ),
         ]
-        .join(format!("{}|{}", space, space).as_str())
+        .join(format!("{space}|{space}").as_str())
     }
 
     fn render_bar<W: Write>(&self, w: &mut W, width: usize, row: u16) -> Result<u16> {
@@ -69,6 +69,9 @@ impl DefaultRenderer {
         Ok(row + 1)
     }
 
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_truncation)]
     fn build_bar(&self, width: usize) -> String {
         if self.progress.is_complete() {
             format!("{}{}", "█".repeat(width), "░".repeat(0))
@@ -96,7 +99,7 @@ mod tests {
 
     use super::*;
 
-    #[test]
+    // #[test]
     // fn test_build_title() {
     //     let title = "Just Do It!";
     //     let expected = "Just Do It!";
@@ -122,7 +125,7 @@ mod tests {
             );
             let renderer = DefaultRenderer::new(Some(String::from("Just Do It!")), progress);
             let bar = renderer.build_bar(20);
-            assert_eq!(bar, expected)
+            assert_eq!(bar, expected);
         }
     }
 }

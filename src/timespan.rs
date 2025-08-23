@@ -10,6 +10,7 @@ pub struct Timespan {
 }
 
 impl Timespan {
+    #[allow(clippy::missing_errors_doc)]
     pub fn new(from: NaiveDateTime, to: NaiveDateTime) -> Result<Self> {
         if from > to {
             Err(format_err!(DoItError::FromAfterTo { from, to }))
@@ -19,48 +20,56 @@ impl Timespan {
         }
     }
 
+    #[must_use]
     pub fn has_expired(&self, current_time: NaiveDateTime) -> bool {
         current_time >= self.to
     }
 }
 
 impl Timespan {
+    #[must_use]
     pub fn progress(&self, current_time: NaiveDateTime) -> Progress {
         Progress::new(*self, current_time)
     }
 
+    #[must_use]
     pub fn format_from(&self) -> String {
         self.from.format(self.format_string()).to_string()
     }
 
+    #[must_use]
     pub fn format_from_with_string(&self, string: &str) -> String {
         self.from.format(string).to_string()
     }
 
+    #[must_use]
     pub fn format_to(&self) -> String {
         self.to.format(self.format_string()).to_string()
     }
 
+    #[must_use]
     pub fn format_to_with_string(&self, string: &str) -> String {
         self.to.format(string).to_string()
     }
 
+    #[must_use]
     pub fn format_duration(&self) -> String {
         Self::format_duration_string(self.duration)
     }
 
+    #[must_use]
     pub fn format_duration_string(duration: Duration) -> String {
         let minutes = duration.num_minutes();
         let hours = duration.num_hours();
         let days = duration.num_days();
         if minutes < 60 {
-            format!("{} m", minutes)
+            format!("{minutes} m")
         } else if hours < 24 {
             Self::format_hours(duration)
         } else if days < 7 {
             Self::format_days(duration)
         } else if days < 365 {
-            format!("{} d", days)
+            format!("{days} d")
         } else {
             format!("{} y", days / 365)
         }
@@ -70,19 +79,19 @@ impl Timespan {
         let hours = duration.num_hours();
         let minutes = duration.num_minutes() % 60;
         if minutes == 0 {
-            format!("{} h", hours)
+            format!("{hours} h")
         } else {
-            format!("{} h {} m", hours, minutes)
+            format!("{hours} h {minutes} m")
         }
     }
 
     fn format_days(duration: Duration) -> String {
         let days = duration.num_days();
-        let hours = (duration.num_hours() % 24) as i64;
+        let hours = duration.num_hours() % 24;
         if hours == 0 {
-            format!("{} d", days)
+            format!("{days} d")
         } else {
-            format!("{} d {} h", days, hours)
+            format!("{days} d {hours} h")
         }
     }
 

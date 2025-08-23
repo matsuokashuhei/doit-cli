@@ -10,6 +10,8 @@ pub struct Progress {
 }
 
 impl Progress {
+    #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn new(timespan: Timespan, current_time: NaiveDateTime) -> Self {
         let elapsed = if current_time < timespan.from {
             Duration::zero()
@@ -44,14 +46,17 @@ impl Progress {
         }
     }
 
+    #[must_use]
     pub fn format_remaining(&self) -> String {
         Timespan::format_duration_string(self.remaining)
     }
 
+    #[must_use]
     pub fn format_elapsed(&self) -> String {
         Timespan::format_duration_string(self.elapsed)
     }
 
+    #[must_use]
     pub fn is_complete(&self) -> bool {
         self.timespan.has_expired(self.current_time)
     }

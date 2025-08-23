@@ -37,7 +37,7 @@ impl Args {
             from,
             to,
             interval: *matches.get_one::<u64>("interval").unwrap(),
-            style: matches.get_one::<Style>("style").cloned().unwrap(),
+            style: matches.get_one::<Style>("style").copied().unwrap(),
         }
     }
 }
@@ -194,6 +194,7 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
     Err(format!("Invalid duration format: {s}"))
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn parse_style(s: &str) -> Result<Style, String> {
     Ok(Style::from_name(s))
 }

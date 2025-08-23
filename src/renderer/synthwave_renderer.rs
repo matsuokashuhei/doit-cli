@@ -56,13 +56,13 @@ impl StyledRenderer for SynthwaveRenderer {
         } else {
             0
         };
-        let top_border = self.build_top_border(width);
+        let top_border = Self::build_top_border(width);
         let row = Self::render_content(w, &top_border, row)?;
         let bar = self.build_bar(width);
         let row = Self::render_content(w, &bar, row)?;
         let progress = self.build_progress(width);
         let row = Self::render_content(w, &progress, row)?;
-        let bottom_border = self.build_bottom_border(width);
+        let bottom_border = Self::build_bottom_border(width);
         let row = Self::render_content(w, &bottom_border, row)?;
         let message = self.build_message(width);
         let row = Self::render_content(w, &message, row)?;
@@ -91,7 +91,7 @@ impl SynthwaveRenderer {
         }
     }
 
-    fn build_top_border(&self, width: usize) -> String {
+    fn build_top_border(width: usize) -> String {
         let lhs = '╔';
         let rhs = '╗';
         format!(
@@ -106,7 +106,7 @@ impl SynthwaveRenderer {
         )
     }
 
-    fn build_bottom_border(&self, width: usize) -> String {
+    fn build_bottom_border(width: usize) -> String {
         let lhs = '╚';
         let rhs = '╝';
         format!(
@@ -121,6 +121,9 @@ impl SynthwaveRenderer {
         )
     }
 
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_precision_loss)]
     fn build_bar(&self, width: usize) -> String {
         let bar_width = self.bar_width(width);
         let filled_length = (bar_width as f64 * self.progress.ratio).round() as usize;
@@ -238,11 +241,11 @@ impl SynthwaveRenderer {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDateTime;
+    // use chrono::NaiveDateTime;
 
-    use crate::{progress, Timespan};
+    // use crate::{progress, Timespan};
 
-    use super::*;
+    // use super::*;
 
     // #[test]
     // fn test_build_title() {
