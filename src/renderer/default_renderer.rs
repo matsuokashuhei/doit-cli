@@ -99,13 +99,6 @@ mod tests {
 
     use super::*;
 
-    // #[test]
-    // fn test_build_title() {
-    //     let title = "Just Do It!";
-    //     let expected = "Just Do It!";
-    //     let result = DefaultRenderer::build_title(title);
-    //     assert_eq!(result, expected);
-    // }
     #[test]
     fn test_build_bar() {
         let test_cases = vec![

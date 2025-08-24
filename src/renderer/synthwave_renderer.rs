@@ -188,7 +188,7 @@ impl SynthwaveRenderer {
             "{:.0}% | {} elapsed | {} remaining",
             self.progress.ratio * 100.0,
             self.progress.format_elapsed(),
-            self.progress.timespan.format_duration()
+            self.progress.format_remaining()
         );
         let rigtht_space = width
             .saturating_sub(VERTICAL_BORDER.len_utf16())
