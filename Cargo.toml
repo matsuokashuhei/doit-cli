@@ -1,6 +1,6 @@
 [package]
 name = "doit"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2021"
 authors = ["Shuhei Matsuoka <matsuokashuheiii@gmail.com>"]
 description = "A CLI progress monitor (doit) for time-based visualization"
@@ -15,6 +15,8 @@ crossterm = "0.29.0"
 anyhow = "1.0.99"
 thiserror = "2.0.16"
 regex = "1.11.1"
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.17"
