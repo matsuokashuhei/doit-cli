@@ -24,9 +24,7 @@ impl Timespan {
     pub fn has_expired(&self, current_time: NaiveDateTime) -> bool {
         current_time >= self.to
     }
-}
 
-impl Timespan {
     #[must_use]
     pub fn progress(&self, current_time: NaiveDateTime) -> Progress {
         Progress::new(*self, current_time)
