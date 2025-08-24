@@ -14,6 +14,7 @@ use doit::{
 };
 use std::io::{stdout, Write};
 use std::time::Duration;
+use tracing::debug;
 use tracing_subscriber::EnvFilter;
 
 fn run<W>(w: &mut W) -> Result<()>
@@ -22,13 +23,16 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
+    debug!(?args);
     let timespan = Timespan::new(args.from.naive_utc(), args.to.naive_utc())?;
+    debug!(?timespan);
 
     let mut row;
     setup_terminal(w)?;
     loop {
-        let current_time = Local::now().naive_utc();
+        let current_time = Local::now().naive_local();
         let progress = timespan.progress(current_time);
+        debug!(?progress);
         row = match args.style {
             Style::Default => {
                 let renderer = DefaultRenderer::new(args.title.clone(), progress);

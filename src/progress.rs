@@ -1,6 +1,7 @@
 use crate::timespan::Timespan;
 use chrono::{Duration, NaiveDateTime};
 
+#[derive(Debug, Clone, Copy)]
 pub struct Progress {
     pub timespan: Timespan,
     pub current_time: NaiveDateTime,
