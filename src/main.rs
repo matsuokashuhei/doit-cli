@@ -14,6 +14,7 @@ use doit::{
 };
 use std::io::{stdout, Write};
 use std::time::Duration;
+use tracing_subscriber::EnvFilter;
 
 fn run<W>(w: &mut W) -> Result<()>
 where
@@ -98,6 +99,10 @@ where
 }
 
 fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_writer(std::fs::File::create("./doit.log")?)
+        .init();
     let mut stdout = stdout();
     run(&mut stdout)
 }

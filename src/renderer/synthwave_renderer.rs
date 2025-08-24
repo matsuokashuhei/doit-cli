@@ -1,6 +1,7 @@
 use anyhow::Result;
 use crossterm::style::{Color, Stylize};
 use std::io::Write;
+use tracing::debug;
 
 use crate::{renderer::StyledRenderer, Progress};
 
@@ -65,6 +66,7 @@ impl StyledRenderer for SynthwaveRenderer {
         let bottom_border = Self::build_bottom_border(width);
         let row = Self::render_content(w, &bottom_border, row)?;
         let message = self.build_message(width);
+        Self::render_background(w, BACKGROUND_COLOR)?;
         let row = Self::render_content(w, &message, row)?;
         Ok(row)
     }
@@ -211,11 +213,16 @@ impl SynthwaveRenderer {
         )
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn build_message(&self, width: usize) -> String {
-        let (symbol_left, message, symbol_right) = if self.progress.is_complete() {
-            ('✔', "COMPLETED︎", '✔')
-        } else {
-            ('⚡', "KEEP THE ENERGY FLOWING", '⚡')
+        let (symbol_left, message, symbol_right) = match (self.progress.ratio * 100.0) as i32 {
+            0..=10 => ('⚡', "SYSTEM INITIALIZING... NEON DREAMS LOADING", '⚡'),
+            11..=25 => ('🌊', "RIDING THE DIGITAL WAVE... STAY CONNECTED", '🌊'),
+            26..=50 => ('🎵', "SYNTHWAVE PULSE DETECTED... KEEP THE BEAT", '🎵'),
+            51..=75 => ('🌆', "CRUISING THE NEON HIGHWAYS... ALMOST THERE", '🌆'),
+            76..=90 => ('🔥', "ELECTRIC ENERGY SURGING... FINAL COUNTDOWN", '🔥'),
+            91..=99 => ('💫', "NEON OVERDRIVE ACTIVATED... PREPARE FOR GLORY", '💫'),
+            _ => ('✨', "WELCOME TO THE FUTURE... MISSION COMPLETE", '✨'),
         };
         let message_len = symbol_left.len_utf16()
             + SPACE.len_utf16()
@@ -226,15 +233,22 @@ impl SynthwaveRenderer {
         let right_padding = width
             .saturating_sub(left_padding)
             .saturating_sub(message_len);
+        debug!(
+            "width: {}, message_len: {}, left_padding: {}, right_padding: {}, total: {}",
+            width,
+            message_len,
+            left_padding,
+            right_padding,
+            left_padding + message_len + right_padding
+        );
         format!(
-            "{}{}{}{}{}{}{}",
-            SPACE.to_string().repeat(left_padding).on(BACKGROUND_COLOR),
-            symbol_left.with(ACCENT_COLOR).on(BACKGROUND_COLOR),
-            SPACE.on(BACKGROUND_COLOR),
-            message.with(ACCENT_COLOR).on(BACKGROUND_COLOR),
-            SPACE.on(BACKGROUND_COLOR),
-            symbol_right.with(ACCENT_COLOR).on(BACKGROUND_COLOR),
-            SPACE.to_string().repeat(right_padding).on(BACKGROUND_COLOR)
+            "{}{}{}{}{}{}",
+            SPACE.to_string().repeat(left_padding),
+            symbol_left.with(ACCENT_COLOR),
+            SPACE,
+            message.with(ACCENT_COLOR),
+            SPACE,
+            symbol_right.with(ACCENT_COLOR),
         )
     }
 }
