@@ -61,15 +61,15 @@ impl Timespan {
         let hours = duration.num_hours();
         let days = duration.num_days();
         if minutes < 60 {
-            format!("{minutes} m")
+            format!("{minutes}m")
         } else if hours < 24 {
             Self::format_hours(duration)
         } else if days < 7 {
             Self::format_days(duration)
         } else if days < 365 {
-            format!("{days} d")
+            format!("{days}d")
         } else {
-            format!("{} y", days / 365)
+            format!("{}y", days / 365)
         }
     }
 
@@ -77,9 +77,9 @@ impl Timespan {
         let hours = duration.num_hours();
         let minutes = duration.num_minutes() % 60;
         if minutes == 0 {
-            format!("{hours} h")
+            format!("{hours}h")
         } else {
-            format!("{hours} h {minutes} m")
+            format!("{hours}h {minutes}m")
         }
     }
 
@@ -87,9 +87,9 @@ impl Timespan {
         let days = duration.num_days();
         let hours = duration.num_hours() % 24;
         if hours == 0 {
-            format!("{days} d")
+            format!("{days}d")
         } else {
-            format!("{days} d {hours} h")
+            format!("{days}d {hours}h")
         }
     }
 
@@ -241,7 +241,7 @@ mod tests {
         let from = NaiveDateTime::parse_from_str("2025-09-01 00:00:00", fmt).unwrap();
         let to = NaiveDateTime::parse_from_str("2025-09-01 07:59:59", fmt).unwrap();
         let timespan = Timespan::new(from, to).unwrap();
-        assert_eq!(timespan.format_duration(), "7 h 59 m");
+        assert_eq!(timespan.format_duration(), "7h 59m");
     }
 
     #[test]
@@ -260,16 +260,16 @@ mod tests {
     #[test]
     fn test_duration_strings() {
         let test_cases = [
-            (Duration::minutes(45), "45 m"),
-            (Duration::hours(5), "5 h"),
-            (Duration::hours(5) + Duration::minutes(30), "5 h 30 m"),
-            (Duration::days(3), "3 d"),
-            (Duration::days(3) + Duration::hours(12), "3 d 12 h"),
-            (Duration::days(10), "10 d"),
-            (Duration::days(30), "30 d"),
-            (Duration::days(300), "300 d"),
-            (Duration::days(400), "1 y"),
-            (Duration::days(800), "2 y"),
+            (Duration::minutes(45), "45m"),
+            (Duration::hours(5), "5h"),
+            (Duration::hours(5) + Duration::minutes(30), "5h 30m"),
+            (Duration::days(3), "3d"),
+            (Duration::days(3) + Duration::hours(12), "3d 12h"),
+            (Duration::days(10), "10d"),
+            (Duration::days(30), "30d"),
+            (Duration::days(300), "300d"),
+            (Duration::days(400), "1y"),
+            (Duration::days(800), "2y"),
         ];
         for (duration, expected) in test_cases {
             assert_eq!(Timespan::format_duration_string(duration), expected);
@@ -279,17 +279,17 @@ mod tests {
     #[test]
     fn test_format_hours() {
         let duration = Duration::hours(5);
-        assert_eq!(Timespan::format_hours(duration), "5 h");
+        assert_eq!(Timespan::format_hours(duration), "5h");
         let duration = Duration::hours(5) + Duration::minutes(30);
-        assert_eq!(Timespan::format_hours(duration), "5 h 30 m");
+        assert_eq!(Timespan::format_hours(duration), "5h 30m");
     }
 
     #[test]
     fn test_format_days() {
         let duration = Duration::days(3);
-        assert_eq!(Timespan::format_days(duration), "3 d");
+        assert_eq!(Timespan::format_days(duration), "3d");
         let duration = Duration::days(3) + Duration::hours(12);
-        assert_eq!(Timespan::format_days(duration), "3 d 12 h");
+        assert_eq!(Timespan::format_days(duration), "3d 12h");
     }
 
     #[test]
