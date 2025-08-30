@@ -5,7 +5,6 @@ use crossterm::{cursor::MoveTo, queue};
 use std::io::Write;
 use std::sync::OnceLock;
 use std::time::Instant;
-use unicode_width::UnicodeWidthChar;
 
 // Fixed inner width of the hourglass content (between the side borders)
 const INNER_WIDTH: usize = 9;
@@ -56,31 +55,40 @@ impl StyledRenderer for HourglassRenderer {
             0
         };
 
+        // Build header/footer first to decide which divider to center on
         let header = self.build_information();
         let footer = self.build_footer();
 
-        // Determine visual widths and divider columns using Unicode display width
-        let (header_width, header_divider) = Self::visual_width_and_divider(&header);
-        let (footer_width, footer_divider) = Self::visual_width_and_divider(&footer);
-        let global_center = if header_width >= footer_width {
-            header_divider
+        let header_divider_col = header
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == INFO_DIVIDER)
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+        let footer_divider_col = footer
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == INFO_DIVIDER)
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+
+        // Decide anchor by the farther-right divider position (prefer footer on tie)
+        let anchor_col = if header_divider_col > footer_divider_col {
+            header_divider_col
         } else {
-            footer_divider
+            footer_divider_col
         };
 
-        // Compute paddings so each '|' aligns to global_center
-        let header_left_pad = global_center.saturating_sub(header_divider);
-        let footer_left_pad = global_center.saturating_sub(footer_divider);
-        let header_padded = format!("{}{}", CH_SPACE.to_string().repeat(header_left_pad), header);
-        let footer_padded = format!("{}{}", CH_SPACE.to_string().repeat(footer_left_pad), footer);
-
-        // Render padded header
-        row = Self::render_content(w, &header_padded, row)?;
-
-        // Align hourglass center to global_center
-        let base_center = 1 + (INNER_WIDTH / 2); // center index of full-width hourglass line
-        let left_pad = global_center.saturating_sub(base_center);
+        // Compute base center of hourglass (including left border)
+        let base_center = 1 + (INNER_WIDTH / 2);
+        let left_pad = anchor_col.saturating_sub(base_center);
         let pad = CH_SPACE.to_string().repeat(left_pad);
+
+        // Render header padded so its '|' aligns to anchor
+        let header_left_pad = (left_pad + base_center).saturating_sub(header_divider_col);
+        let header_pad = CH_SPACE.to_string().repeat(header_left_pad);
+        let header_padded = format!("{}{}", header_pad, header);
+        row = Self::render_content(w, &header_padded, row)?;
 
         // Render the hourglass box
         for line in self.build_hourglass() {
@@ -92,25 +100,16 @@ impl StyledRenderer for HourglassRenderer {
             row += 1;
         }
 
-        // Render padded footer
+        // Footer: pad so its '|' aligns to the same anchor
+        let footer_left_pad = (left_pad + base_center).saturating_sub(footer_divider_col);
+        let footer_pad = CH_SPACE.to_string().repeat(footer_left_pad);
+        let footer_padded = format!("{}{}", footer_pad, footer);
         row = Self::render_content(w, &footer_padded, row)?;
         Ok(row)
     }
 }
 
 impl HourglassRenderer {
-    // Calculate visual display width and the visual column of the divider '|'
-    fn visual_width_and_divider(s: &str) -> (usize, usize) {
-        let mut width = 0usize;
-        let mut divider_col = 0usize;
-        for ch in s.chars() {
-            if ch == INFO_DIVIDER {
-                divider_col = width;
-            }
-            width += UnicodeWidthChar::width(ch).unwrap_or(1);
-        }
-        (width, divider_col)
-    }
     fn build_title(&self) -> Option<String> {
         self.title.clone()
     }
