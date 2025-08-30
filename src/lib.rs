@@ -6,5 +6,7 @@ pub mod timespan;
 
 pub use cli::{build_command, Args};
 pub use progress::Progress;
-pub use renderer::{DefaultRenderer, RetroRenderer, Style, StyledRenderer, SynthwaveRenderer};
+pub use renderer::{
+    DefaultRenderer, HourglassRenderer, RetroRenderer, Style, StyledRenderer, SynthwaveRenderer,
+};
 pub use timespan::Timespan;

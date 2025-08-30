@@ -27,7 +27,7 @@ Just Do It!
 - 🎨 **Smart dynamic formatting** - automatically adjusts time display based on duration
 - 🔄 **Real-time updates** with optimized 60-second refresh
 - 📝 **Custom title support** for motivational progress sessions
-- 🎭 **Multiple styles** (default, retro, synthwave)
+- 🎭 **Multiple styles** (default, hourglass, retro, synthwave)
 - 🖥️ **Cross-platform** (Linux/macOS/Windows)
 - ⚡ **Colored output** with intelligent time calculations
 
@@ -88,6 +88,9 @@ doit --from "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style 
 # Use synthwave style for synthwave-style aesthetic
 doit --from "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
 
+# Use hourglass style for a visual sand timer effect
+doit --from "2025-08-10 09:00:00" --duration "8h" --title "Time is Flowing" --style hourglass
+
 # Short form options
 doit -f "2025-08-10 09:00:00" -d "8h" -T "My Task"
 ```
@@ -98,7 +101,7 @@ doit -f "2025-08-10 09:00:00" -d "8h" -T "My Task"
 - `--to` / `-t` End time (mutually exclusive with --duration)
 - `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --to)
 - `--title` / `-T` title message for motivation
-- `--style` / `-s` Display style [default|retro|synthwave]
+- `--style` / `-s` Display style [default|hourglass|retro|synthwave]
 
 ## Example Output
 
@@ -154,6 +157,31 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
                        ⚡ KEEP THE ENERGY FLOWING ⚡
 ```
 
+### Hourglass Style Example
+
+```
+Time is Flowing
+14:30 → 16:30   |   25%
+         ┏━━━━━━━━━┓
+         ┃░░░░░░░░░┃
+         ┃██░░░░░██┃
+         ┃█████████┃
+         ┃█████████┃
+          ┃███████┃
+           ┃█████┃
+            ┃███┃
+             ┃█┃
+             ┃┊┃
+            ┃░┊░┃
+           ┃░░┊░░┃
+          ┃░░░┊░░░┃
+         ┃░░░░┊░░░░┃
+         ┃░░████░░░┃
+         ┃█████████┃
+         ┗━━━━━━━━━┛
+elapsed: 30m   |   remaining: 1h 30m
+```
+
 ## Time Examples
 
 **doit** smartly formats time displays based on session length:
@@ -203,7 +231,15 @@ cargo fmt         # Code formatting
 cargo build --release  # Optimized build
 ```
 
-## Recent Updates (v0.8.0)
+## Recent Updates
+
+### Hourglass Style Improvements
+- New header/body/footer layout (header: `from → to | %`, footer: `elapsed | remaining`).
+- Hourglass centered so its vertical axis aligns with the footer divider `|` dynamically.
+- Moving droplet animation (`┋`/`┊`) replacing simple blinking.
+- All characters (borders, sand, droplet, symbols) refactored into constants for easy customization.
+
+### v0.8.0
 
 ### 🔄 Major CLI Refactoring (Breaking Changes)
 - **Renamed Arguments**: `--start` → `--from` (-f), `--end` → `--to` (-t), `--title` → `--title` (-T), `--theme` → `--style` (-s)
