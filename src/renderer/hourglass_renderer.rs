@@ -105,7 +105,6 @@ impl HourglassRenderer {
         [elapsed, remaining].join(format!("{space}{}{space}", INFO_DIVIDER).as_str())
     }
 
-
     // Build full box (top border, interior 18 lines, bottom border)
     fn build_hourglass(&self) -> Vec<String> {
         let start = START_INSTANT.get_or_init(Instant::now);
