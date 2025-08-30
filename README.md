@@ -162,23 +162,26 @@ STATUS: > ALMOST THERE, SOLDIER! HOLD YOUR POSITION.
 ```
 Time is Flowing
 14:30 → 16:30   |   25%
-         ┏━━━━━━━━━┓
-         ┃░░░░░░░░░┃
-         ┃██░░░░░██┃
-         ┃█████████┃
-         ┃█████████┃
-          ┃███████┃
-           ┃█████┃
-            ┃███┃
-             ┃█┃
-             ┃┊┃
-            ┃░┊░┃
-           ┃░░┊░░┃
-          ┃░░░┊░░░┃
-         ┃░░░░┊░░░░┃
-         ┃░░████░░░┃
-         ┃█████████┃
-         ┗━━━━━━━━━┛
+           ┏━━━━━━━━━┓
+           ┃░░░░░░░░░┃
+           ┃██░░░░███┃
+           ┃█████████┃
+           ┃█████████┃
+           ┃█████████┃
+           ┃█████████┃
+           ┗━┓█████┏━┛
+             ┗━┓█┏━┛  
+               ┃┊┃
+             ┏━┛┊┗━┓  
+           ┏━┛░░┊░░┗━┓
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┃░░░░┊░░░░┃
+           ┗━━━━━━━━━┛
 elapsed: 30m   |   remaining: 1h 30m
 ```
 
@@ -235,8 +238,9 @@ cargo build --release  # Optimized build
 
 ### Hourglass Style Improvements
 - New header/body/footer layout (header: `from → to | %`, footer: `elapsed | remaining`).
-- Hourglass centered so its vertical axis aligns with the footer divider `|` dynamically.
+- Hourglass centered so its vertical axis aligns with the header/footer divider `|` dynamically.
 - Moving droplet animation (`┋`/`┊`) replacing simple blinking.
+- Fixed 60-cell sand capacity synced to progress; neck stays open at 100%.
 - All characters (borders, sand, droplet, symbols) refactored into constants for easy customization.
 
 ### v0.8.0
