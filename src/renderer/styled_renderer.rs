@@ -11,6 +11,7 @@ use std::io::Write;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Style {
     Default,
+    Hourglass,
     Retro,
     Synthwave,
 }
@@ -19,6 +20,7 @@ impl Style {
     #[must_use]
     pub fn from_name(name: &str) -> Self {
         match name.to_lowercase().as_str() {
+            "hourglass" => Style::Hourglass,
             "retro" => Style::Retro,
             "synthwave" => Style::Synthwave,
             _ => Style::Default,

@@ -10,7 +10,8 @@ use crossterm::{
 };
 use doit::timespan::Timespan;
 use doit::{
-    build_command, Args, DefaultRenderer, RetroRenderer, Style, StyledRenderer, SynthwaveRenderer,
+    build_command, Args, DefaultRenderer, HourglassRenderer, RetroRenderer, Style, StyledRenderer,
+    SynthwaveRenderer,
 };
 use std::io::{stdout, Write};
 use std::time::Duration;
@@ -36,6 +37,10 @@ where
         row = match args.style {
             Style::Default => {
                 let renderer = DefaultRenderer::new(args.title.clone(), progress);
+                renderer.render(w)?
+            }
+            Style::Hourglass => {
+                let renderer = HourglassRenderer::new(args.title.clone(), progress);
                 renderer.render(w)?
             }
             Style::Retro => {

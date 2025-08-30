@@ -85,7 +85,7 @@ pub fn build_command() -> Command {
                 .short('i')
                 .long("interval")
                 .value_parser(clap::value_parser!(u64).range(1..60))
-                .default_value("10")
+                .default_value("1")
                 .help("Refresh interval in seconds"),
         )
         .arg(
@@ -94,7 +94,7 @@ pub fn build_command() -> Command {
                 .long("style")
                 .value_parser(parse_style)
                 .default_value("default")
-                .help("Display style [default|retro|synthwave]"),
+                .help("Display style [default|hourglass|retro|synthwave]"),
         )
 }
 

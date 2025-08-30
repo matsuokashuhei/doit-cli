@@ -19,6 +19,7 @@
                 }
             },
             "extensions": [
+                "openai.chatgpt",
                 "fill-labs.dependi",
                 "rust-lang.rust-analyzer",
                 "tamasfe.even-better-toml",
