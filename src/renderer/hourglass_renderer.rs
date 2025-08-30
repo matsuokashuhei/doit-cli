@@ -25,8 +25,6 @@ const CH_FLOW_TRAIL: char = '┊';
 
 const CH_SPACE: char = ' ';
 
-// UI symbols (non-structural)
-const ICON_HOURGLASS: &str = "⏳";
 const SEP_ARROW: &str = "→";
 const INFO_DIVIDER: char = '|';
 
@@ -118,7 +116,8 @@ impl HourglassRenderer {
         [elapsed, remaining].join(format!("{space}{}{space}", INFO_DIVIDER).as_str())
     }
 
-    // Build full box (top border, interior 18 lines, bottom border)
+    // Build full box (top border, interior lines, bottom border)
+    // Interior lines = TOP_ROWS + 2 (top joins) + 1 (neck) + 2 (bottom joins) + BOTTOM_ROWS
     fn build_hourglass(&self) -> Vec<String> {
         let start = START_INSTANT.get_or_init(Instant::now);
         let elapsed = start.elapsed();
@@ -329,18 +328,6 @@ impl HourglassRenderer {
             CH_SPACE.to_string().repeat(indent),
             CH_BORDER_V,
             inner,
-            CH_BORDER_V
-        )
-    }
-
-    // Variant taking a prepared inner slice of chars
-    fn funnel_line_dyn(indent: usize, inner: &[char]) -> String {
-        let s: String = inner.iter().collect();
-        format!(
-            "{}{}{}{}",
-            CH_SPACE.to_string().repeat(indent),
-            CH_BORDER_V,
-            s,
             CH_BORDER_V
         )
     }
