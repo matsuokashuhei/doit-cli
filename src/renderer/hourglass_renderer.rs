@@ -55,19 +55,40 @@ impl StyledRenderer for HourglassRenderer {
             0
         };
 
+        // Build header/footer first to decide which divider to center on
         let header = self.build_information();
-        row = Self::render_content(w, &header, row)?;
+        let footer = self.build_footer();
 
-        // Align hourglass center to the '|' in the header line
-        let divider_col = header
+        let header_divider_col = header
             .chars()
             .enumerate()
             .find(|(_, c)| *c == INFO_DIVIDER)
             .map(|(i, _)| i)
             .unwrap_or(0);
-        let base_center = 1 + (INNER_WIDTH / 2); // center index of full-width hourglass line
-        let left_pad = divider_col.saturating_sub(base_center);
+        let footer_divider_col = footer
+            .chars()
+            .enumerate()
+            .find(|(_, c)| *c == INFO_DIVIDER)
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+
+        // Decide anchor by the farther-right divider position (prefer footer on tie)
+        let anchor_col = if header_divider_col > footer_divider_col {
+            header_divider_col
+        } else {
+            footer_divider_col
+        };
+
+        // Compute base center of hourglass (including left border)
+        let base_center = 1 + (INNER_WIDTH / 2);
+        let left_pad = anchor_col.saturating_sub(base_center);
         let pad = CH_SPACE.to_string().repeat(left_pad);
+
+        // Render header padded so its '|' aligns to anchor
+        let header_left_pad = (left_pad + base_center).saturating_sub(header_divider_col);
+        let header_pad = CH_SPACE.to_string().repeat(header_left_pad);
+        let header_padded = format!("{}{}", header_pad, header);
+        row = Self::render_content(w, &header_padded, row)?;
 
         // Render the hourglass box
         for line in self.build_hourglass() {
@@ -79,14 +100,7 @@ impl StyledRenderer for HourglassRenderer {
             row += 1;
         }
 
-        // Footer: pad so its '|' aligns to the hourglass center
-        let footer = self.build_footer();
-        let footer_divider_col = footer
-            .chars()
-            .enumerate()
-            .find(|(_, c)| *c == INFO_DIVIDER)
-            .map(|(i, _)| i)
-            .unwrap_or(0);
+        // Footer: pad so its '|' aligns to the same anchor
         let footer_left_pad = (left_pad + base_center).saturating_sub(footer_divider_col);
         let footer_pad = CH_SPACE.to_string().repeat(footer_left_pad);
         let footer_padded = format!("{}{}", footer_pad, footer);
