@@ -105,17 +105,6 @@ impl HourglassRenderer {
         [elapsed, remaining].join(format!("{space}{}{space}", INFO_DIVIDER).as_str())
     }
 
-    fn build_remaining(&self) -> String {
-        if self.progress.is_complete() {
-            format!("{} Completed", ICON_HOURGLASS)
-        } else {
-            format!(
-                "{} {} remaining",
-                ICON_HOURGLASS,
-                self.progress.format_remaining()
-            )
-        }
-    }
 
     // Build full box (top border, interior 18 lines, bottom border)
     fn build_hourglass(&self) -> Vec<String> {
