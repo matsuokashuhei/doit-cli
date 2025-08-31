@@ -17,21 +17,21 @@ impl StyledRenderer for DefaultRenderer {
         DefaultRenderer { title, progress }
     }
 
-    fn render<W: Write>(&self, w: &mut W) -> Result<u16> {
+    fn render_content<W: Write>(&self, w: &mut W) -> Result<u16> {
         let width = Self::terminal_width();
         let title = self.build_title();
         let row = if let Some(title) = title {
-            Self::render_content(w, &title, 0)?
+            Self::render_content_line(w, &title, 0)?
         } else {
             0
         };
         let infromation = self.build_information();
-        let row = Self::render_content(w, &infromation, row)?;
+        let row = Self::render_content_line(w, &infromation, row)?;
         let row = Self::render_empty_line(w, row)?;
         let row = self.render_bar(w, width, row)?;
         let row = Self::render_empty_line(w, row)?;
         let remaining = self.build_remaining();
-        let row = Self::render_content(w, &remaining, row)?;
+        let row = Self::render_content_line(w, &remaining, row)?;
         Ok(row)
     }
 }

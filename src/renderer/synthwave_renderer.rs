@@ -48,26 +48,26 @@ impl StyledRenderer for SynthwaveRenderer {
         SynthwaveRenderer { title, progress }
     }
 
-    fn render<W: Write>(&self, w: &mut W) -> Result<u16> {
+    fn render_content<W: Write>(&self, w: &mut W) -> Result<u16> {
         let width = Self::terminal_width();
         Self::render_background(w, BACKGROUND_COLOR)?;
         let title = self.build_title();
         let row = if let Some(title) = title {
-            Self::render_content(w, &title, 0)?
+            Self::render_content_line(w, &title, 0)?
         } else {
             0
         };
         let top_border = Self::build_top_border(width);
-        let row = Self::render_content(w, &top_border, row)?;
+        let row = Self::render_content_line(w, &top_border, row)?;
         let bar = self.build_bar(width);
-        let row = Self::render_content(w, &bar, row)?;
+        let row = Self::render_content_line(w, &bar, row)?;
         let progress = self.build_progress(width);
-        let row = Self::render_content(w, &progress, row)?;
+        let row = Self::render_content_line(w, &progress, row)?;
         let bottom_border = Self::build_bottom_border(width);
-        let row = Self::render_content(w, &bottom_border, row)?;
+        let row = Self::render_content_line(w, &bottom_border, row)?;
         let message = self.build_message(width);
         Self::render_background(w, BACKGROUND_COLOR)?;
-        let row = Self::render_content(w, &message, row)?;
+        let row = Self::render_content_line(w, &message, row)?;
         Ok(row)
     }
 }
