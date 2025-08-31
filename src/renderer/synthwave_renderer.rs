@@ -233,6 +233,7 @@ impl SynthwaveRenderer {
         let right_padding = width
             .saturating_sub(left_padding)
             .saturating_sub(message_len);
+        #[cfg(debug_assertions)]
         debug!(
             "width: {}, message_len: {}, left_padding: {}, right_padding: {}, total: {}",
             width,

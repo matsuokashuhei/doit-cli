@@ -6,8 +6,8 @@ use std::process::exit;
 
 #[derive(Debug, Clone)]
 pub struct Args {
-    pub from: DateTime<Local>,
-    pub to: DateTime<Local>,
+    pub start: DateTime<Local>,
+    pub end: DateTime<Local>,
     pub interval: u64,
     pub title: Option<String>,
     pub style: Style,
@@ -18,24 +18,27 @@ impl Args {
     #[allow(clippy::missing_panics_doc)]
     #[allow(clippy::needless_pass_by_value)]
     pub fn parse(matches: ArgMatches) -> Self {
-        let from = matches.get_one::<DateTime<Local>>("from").copied().unwrap();
-        let to = matches
-            .get_one::<DateTime<Local>>("to")
+        let start = matches
+            .get_one::<DateTime<Local>>("start")
             .copied()
-            .unwrap_or_else(|| from + matches.get_one::<Duration>("duration").copied().unwrap());
+            .unwrap();
+        let end = matches
+            .get_one::<DateTime<Local>>("end")
+            .copied()
+            .unwrap_or_else(|| start + matches.get_one::<Duration>("duration").copied().unwrap());
 
-        if to < from {
+        if end < start {
             println!(
-                "to {} must be after from {}.",
-                to.format("%Y-%m-%d %H:%M:%S"),
-                from.format("%Y-%m-%d %H:%M:%S")
+                "end {} must be after start {}.",
+                end.format("%Y-%m-%d %H:%M:%S"),
+                start.format("%Y-%m-%d %H:%M:%S")
             );
             exit(1);
         }
         Args {
             title: matches.get_one::<String>("title").cloned(),
-            from,
-            to,
+            start,
+            end,
             interval: *matches.get_one::<u64>("interval").unwrap(),
             style: matches.get_one::<Style>("style").copied().unwrap(),
         }
@@ -48,24 +51,24 @@ pub fn build_command() -> Command {
         .about("Just Do It! - Progress Bar Tool for Motivation")
         .arg(
             clap::Arg::new("title")
-                .short('T')
+                .short('t')
                 .long("title")
                 .value_parser(clap::value_parser!(String))
                 .help("Title message"),
         )
         .arg(
-            clap::Arg::new("from")
-                .short('f')
-                .long("from")
+            clap::Arg::new("start")
+                .short('s')
+                .long("start")
                 .value_parser(parse_start_time)
                 .default_value(Local::now().format("%Y-%m-%d %H:%M:%S").to_string())
                 .help("Start time (optional, default: current time)"),
         )
         .arg(
-            clap::Arg::new("to")
+            clap::Arg::new("end")
                 .required(true)
-                .short('t')
-                .long("to")
+                .short('e')
+                .long("end")
                 .value_parser(parse_end_time)
                 .conflicts_with("duration")
                 .help("End time (mutually exclusive with --duration)"),
@@ -76,8 +79,8 @@ pub fn build_command() -> Command {
                 .short('d')
                 .long("duration")
                 .value_parser(parse_duration)
-                .conflicts_with("to")
-                .help("Duration (mutually exclusive with --to)"),
+                .conflicts_with("end")
+                .help("Duration (mutually exclusive with --end)"),
         )
         .arg(
             clap::Arg::new("interval")
@@ -90,7 +93,7 @@ pub fn build_command() -> Command {
         )
         .arg(
             clap::Arg::new("style")
-                .short('s')
+                .short('S')
                 .long("style")
                 .value_parser(parse_style)
                 .default_value("default")
@@ -204,91 +207,91 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_with_from() {
+    fn test_parse_with_start() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.from.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.start.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-01 10:20:30"
         );
     }
 
     #[test]
-    fn test_parse_without_from() {
+    fn test_parse_without_start() {
         let now = Local::now().with_nanosecond(0).unwrap();
-        let to = (now + Duration::days(30))
+        let start = (now + Duration::days(30))
             .format("%Y-%m-%d %H:%M:%S")
             .to_string();
-        let args = vec!["doit", "--to", &to];
+        let args = vec!["doit", "--end", &start];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.from, now);
+        assert_eq!(args.start, now);
     }
 
     #[test]
-    fn test_parse_with_to() {
+    fn test_parse_with_end() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.to.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-31 23:59:59"
         );
     }
 
     #[test]
     fn test_parse_with_duration_seconds() {
-        let args = vec!["doit", "--from", "2025-01-01 10:20:30", "--duration", "1s"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1s"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.to.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-01 10:20:31"
         );
     }
 
     #[test]
     fn test_parse_with_duration_minutes() {
-        let args = vec!["doit", "--from", "2025-01-01 10:20:30", "--duration", "1m"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1m"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.to.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-01 10:21:30"
         );
     }
 
     #[test]
     fn test_parse_with_duration_hours() {
-        let args = vec!["doit", "--from", "2025-01-01 10:20:30", "--duration", "1h"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1h"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.to.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-01 11:20:30"
         );
     }
 
     #[test]
     fn test_parse_with_duration_days() {
-        let args = vec!["doit", "--from", "2025-01-01 10:20:30", "--duration", "1d"];
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1d"];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(
-            args.to.format("%Y-%m-%d %H:%M:%S").to_string(),
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-02 10:20:30"
         );
     }
@@ -492,9 +495,9 @@ mod tests {
     fn test_parse_with_title() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
             "--title",
             "My Custom Title",
@@ -508,11 +511,11 @@ mod tests {
     fn test_parse_with_title_short() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
-            "-T",
+            "-t",
             "Short Title",
         ];
         let command = build_command();
@@ -524,9 +527,9 @@ mod tests {
     fn test_parse_without_title() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
         ];
         let command = build_command();
@@ -535,12 +538,28 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_with_default_style() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--style",
+            "default",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.style, Style::Default);
+    }
+
+    #[test]
     fn test_parse_with_retro_style() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
             "--style",
             "retro",
@@ -551,18 +570,34 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_with_default_style() {
+    fn test_parse_with_synthwave_style() {
         let args = vec![
             "doit",
-            "--from",
+            "--start",
             "2025-01-01 10:20:30",
-            "--to",
+            "--end",
             "2025-01-31 23:59:59",
             "--style",
-            "default",
+            "synthwave",
         ];
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
-        assert_eq!(args.style, Style::Default);
+        assert_eq!(args.style, Style::Synthwave);
+    }
+
+    #[test]
+    fn test_parse_with_hourglass_style() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-01-31 23:59:59",
+            "--style",
+            "hourglass",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.style, Style::Hourglass);
     }
 }

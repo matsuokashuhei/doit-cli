@@ -24,8 +24,10 @@ where
 {
     let command = build_command();
     let args = Args::parse(command.get_matches());
+    #[cfg(debug_assertions)]
     debug!(?args);
-    let timespan = Timespan::new(args.from.naive_utc(), args.to.naive_utc())?;
+    let timespan = Timespan::new(args.start.naive_utc(), args.end.naive_utc())?;
+    #[cfg(debug_assertions)]
     debug!(?timespan);
 
     let mut row;
@@ -108,6 +110,7 @@ where
 }
 
 fn main() -> Result<()> {
+    #[cfg(debug_assertions)]
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .with_writer(std::fs::File::create("./doit.log")?)
