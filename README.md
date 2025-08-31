@@ -2,14 +2,14 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/matsuokashuhei/morrow)
 
 **doit** is a CLI tool to visualize your time and boost your focus.
 Set a duration or deadline, and see your progress in real time.
 Use this tool to maximize your concentration and motivation!
 
 ```
-$ doit -f "2025-08-12 08:00:00" -d 9h -T "Just Do It!"
+$ doit -s "2025-08-12 08:00:00" -d 9h -t "Just Do It!"
 
 Just Do It!
 08:00 → 17:00   |   92%   |   8h 14m / 9h
@@ -35,15 +35,14 @@ Just Do It!
 
 **doit** automatically chooses the best time format based on your session duration:
 
-- **≤24h**: `14:30` (clean time format)
-- **≤7d**: `8/16 14:30` (includes date)
-- **>7d**: `2025-08-16 14:30` (full datetime)
+- **≤24 hours**: `14:00 → 16:00`
+- **≤7 days**: `08-16 09:00 → 08-19 09:00`
+- **>7 days**: `2025-08-01 → 2025-12-31`
 
-Total duration is also smartly formatted:
-- **≤1h**: `1h 23m 45s` (precise to seconds)
-- **≤24h**: `12h 34m` (hours and minutes)
-- **≤7d**: `3d 14h` (days and hours)
-- **>7d**: `2w 4d` (weeks and days)
+Progress and remaining time are also smartly formatted:
+- **≤24 hours**: `2h 30m`
+- **≤7 days**: `2d 5h`
+- **>7 days**: `45d`
 
 ## Install
 
@@ -77,31 +76,31 @@ Download the latest release from [GitHub Releases](https://github.com/matsuokash
 doit --duration "3h"
 
 # Set custom start and end times
-doit --from "2025-08-10 09:00:00" --to "2025-08-10 17:00:00"
+doit --start "2025-08-10 09:00:00" --end "2025-08-10 17:00:00"
 
 # Add a custom title to your progress session
-doit --from "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
+doit --start "2025-08-10 09:00:00" --duration "8h" --title "Deep Work Session"
 
 # Use retro style for military-style motivation
-doit --from "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style retro
+doit --start "2025-08-10 09:00:00" --duration "8h" --title "JUST DO IT!" --style retro
 
 # Use synthwave style for synthwave-style aesthetic
-doit --from "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
+doit --start "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style synthwave
 
 # Use hourglass style for a visual sand timer effect
-doit --from "2025-08-10 09:00:00" --duration "8h" --title "Time is Flowing" --style hourglass
+doit --start "2025-08-10 09:00:00" --duration "8h" --title "Time is Flowing" --style hourglass
 
 # Short form options
-doit -f "2025-08-10 09:00:00" -d "8h" -T "My Task"
+doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
 ```
 
 ### Options
 
-- `--from` / `-f` Start time (optional, default: current time)
-- `--to` / `-t` End time (mutually exclusive with --duration)
-- `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --to)
-- `--title` / `-T` title message for motivation
-- `--style` / `-s` Display style [default|hourglass|retro|synthwave]
+- `--start` / `-s` Start time (optional, default: current time)
+- `--end` / `-e` End time (mutually exclusive with --duration)
+- `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --end)
+- `--title` / `-t` title message for motivation
+- `--style` / `-S` Display style [default|hourglass|retro|synthwave]
 
 ## Example Output
 
@@ -170,9 +169,9 @@ Time is Flowing
            ┃█████████┃
            ┃█████████┃
            ┗━┓█████┏━┛
-             ┗━┓█┏━┛  
+             ┗━┓█┏━┛
                ┃┊┃
-             ┏━┛┊┗━┓  
+             ┏━┛┊┗━┓
            ┏━┛░░┊░░┗━┓
            ┃░░░░┊░░░░┃
            ┃░░░░┊░░░░┃
@@ -191,7 +190,7 @@ elapsed: 30m   |   remaining: 1h 30m
 
 ### Short Sessions (≤24 hours)
 ```bash
-$ doit -f "14:00:00" -d "2h" -T "Focus Session"
+$ doit -s "14:00:00" -d "2h" -t "Focus Session"
 
 Focus Session
 14:00 → 16:00   |   25%   |   30m / 2h
@@ -228,39 +227,11 @@ Annual Goal
 ## Development & Testing
 
 ```bash
-cargo test        # Run all tests (36 comprehensive test cases)
-cargo clippy      # Lint checking
-cargo fmt         # Code formatting
-cargo build --release  # Optimized build
+cargo test
+cargo clippy
+cargo fmt
+cargo build --release
 ```
-
-## Recent Updates
-
-### Hourglass Style Improvements
-- New header/body/footer layout (header: `from → to | %`, footer: `elapsed | remaining`).
-- Hourglass centered so its vertical axis aligns with the header/footer divider `|` dynamically.
-- Moving droplet animation (`┋`/`┊`) replacing simple blinking.
-- Fixed 60-cell sand capacity synced to progress; neck stays open at 100%.
-- All characters (borders, sand, droplet, symbols) refactored into constants for easy customization.
-
-### v0.8.0
-
-### 🔄 Major CLI Refactoring (Breaking Changes)
-- **Renamed Arguments**: `--start` → `--from` (-f), `--end` → `--to` (-t), `--title` → `--title` (-T), `--theme` → `--style` (-s)
-- **Removed Arguments**: `--interval`, `--verbose` (fixed to 60-second updates for optimal performance)
-- **Enhanced Motivation**: Goal-focused messaging instead of generic titles
-- **Simplified Interface**: Cleaner, more intuitive argument structure
-
-### 🧪 Testing
-- Updated comprehensive test suite (35 test cases)
-- All functionality validated with new argument structure
-- Maintained backward compatibility for time parsing
-
-### 📋 Migration Guide
-- `doit --start "time" --end "time"` → `doit --from "time" --to "time"`
-- `doit --title "message"` → `doit --title "message"`
-- `doit --theme retro` → `doit --style retro`
-- Remove `--interval` and `--verbose` flags (automatic 60s updates)
 
 ## License
 
