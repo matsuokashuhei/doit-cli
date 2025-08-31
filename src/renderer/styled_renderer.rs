@@ -32,8 +32,16 @@ pub trait StyledRenderer {
     #[allow(clippy::missing_errors_doc)]
     fn new(title: Option<String>, progress: Progress) -> Self;
 
+    #[must_use]
+    fn render<W: Write>(&self, w: &mut W) -> Result<u16> {
+        let row = self.render_content(w);
+        queue!(w, Clear(ClearType::FromCursorDown))?;
+        row
+    }
+
+    #[must_use]
     #[allow(clippy::missing_errors_doc)]
-    fn render<W: Write>(&self, w: &mut W) -> Result<u16>;
+    fn render_content<W: Write>(&self, w: &mut W) -> Result<u16>;
 
     #[must_use]
     #[allow(clippy::missing_errors_doc)]
@@ -42,7 +50,7 @@ pub trait StyledRenderer {
     }
 
     #[allow(clippy::missing_errors_doc)]
-    fn render_content<W: Write>(w: &mut W, content: &str, row: u16) -> Result<u16> {
+    fn render_content_line<W: Write>(w: &mut W, content: &str, row: u16) -> Result<u16> {
         queue!(
             w,
             MoveTo(0, row),
@@ -54,13 +62,18 @@ pub trait StyledRenderer {
 
     #[allow(clippy::missing_errors_doc)]
     fn render_empty_line<W: Write>(w: &mut W, row: u16) -> Result<u16> {
-        Self::render_content(w, "", row)?;
+        Self::render_content_line(w, "", row)?;
         Ok(row + 1)
     }
 
     #[allow(clippy::missing_errors_doc)]
     fn render_background<W: Write>(w: &mut W, color: Color) -> Result<()> {
         queue!(w, SetBackgroundColor(color))?;
+        Ok(())
+    }
+
+    fn render_xxx<W: Write>(w: &mut W) -> Result<()> {
+        queue!(w, Clear(ClearType::FromCursorDown))?;
         Ok(())
     }
 }

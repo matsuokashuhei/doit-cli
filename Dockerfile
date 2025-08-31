@@ -9,7 +9,7 @@ FROM base AS builder
 COPY . .
 RUN cargo build --release
 
-FROM debian:bookworm-slim AS runtime
+FROM base AS runtime
 RUN <<EOT
 apt-get update
 apt-get install -y --no-install-recommends ca-certificates

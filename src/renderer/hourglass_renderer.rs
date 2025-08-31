@@ -1,7 +1,5 @@
 use crate::{renderer::StyledRenderer, Progress};
 use anyhow::Result;
-use crossterm::style::{Color, PrintStyledContent, Stylize};
-use crossterm::{cursor::MoveTo, queue};
 use std::io::Write;
 use std::sync::OnceLock;
 use std::time::Instant;
@@ -47,10 +45,10 @@ impl StyledRenderer for HourglassRenderer {
         HourglassRenderer { title, progress }
     }
 
-    fn render<W: Write>(&self, w: &mut W) -> Result<u16> {
+    fn render_content<W: Write>(&self, w: &mut W) -> Result<u16> {
         let title = self.build_title();
         let mut row = if let Some(title) = title {
-            Self::render_content(w, &title, 0)?
+            Self::render_content_line(w, &title, 0)?
         } else {
             0
         };
@@ -88,15 +86,11 @@ impl StyledRenderer for HourglassRenderer {
         let header_left_pad = (left_pad + base_center).saturating_sub(header_divider_col);
         let header_pad = CH_SPACE.to_string().repeat(header_left_pad);
         let header_padded = format!("{}{}", header_pad, header);
-        row = Self::render_content(w, &header_padded, row)?;
+        row = Self::render_content_line(w, &header_padded, row)?;
 
         // Render the hourglass box
         for line in self.build_hourglass() {
-            queue!(
-                w,
-                MoveTo(0, row),
-                PrintStyledContent(format!("{}{}", pad, line).with(Color::Reset))
-            )?;
+            Self::render_content_line(w, &format!("{}{}", pad, line), row)?;
             row += 1;
         }
 
@@ -104,7 +98,7 @@ impl StyledRenderer for HourglassRenderer {
         let footer_left_pad = (left_pad + base_center).saturating_sub(footer_divider_col);
         let footer_pad = CH_SPACE.to_string().repeat(footer_left_pad);
         let footer_padded = format!("{}{}", footer_pad, footer);
-        row = Self::render_content(w, &footer_padded, row)?;
+        row = Self::render_content_line(w, &footer_padded, row)?;
         Ok(row)
     }
 }

@@ -12,33 +12,33 @@ impl StyledRenderer for RetroRenderer {
         RetroRenderer { title, progress }
     }
 
-    fn render<W: Write>(&self, w: &mut W) -> Result<u16> {
+    fn render_content<W: Write>(&self, w: &mut W) -> Result<u16> {
         let width = Self::terminal_width();
         let title = self.build_title();
         let row = if let Some(title) = title {
-            Self::render_content(w, &title, 0)?
+            Self::render_content_line(w, &title, 0)?
         } else {
             0
         };
         let divider = Self::buid_divider(width);
-        let row = Self::render_content(w, &divider, row)?;
+        let row = Self::render_content_line(w, &divider, row)?;
         let from = self.buid_from();
-        let row = Self::render_content(w, &from, row)?;
+        let row = Self::render_content_line(w, &from, row)?;
         let to = self.buid_to();
-        let row = Self::render_content(w, &to, row)?;
+        let row = Self::render_content_line(w, &to, row)?;
         let elapsed = self.build_elapsed();
-        let row = Self::render_content(w, &elapsed, row)?;
+        let row = Self::render_content_line(w, &elapsed, row)?;
         let remaining = self.build_remaining();
-        let row = Self::render_content(w, &remaining, row)?;
+        let row = Self::render_content_line(w, &remaining, row)?;
         let row = Self::render_empty_line(w, row)?;
-        let row = Self::render_content(w, "[PROGRESS]", row)?;
+        let row = Self::render_content_line(w, "[PROGRESS]", row)?;
         let bar = self.build_bar(width);
-        let row = Self::render_content(w, &bar, row)?;
-        let row = Self::render_content(w, &divider, row)?;
+        let row = Self::render_content_line(w, &bar, row)?;
+        let row = Self::render_content_line(w, &divider, row)?;
         let status = self.build_status();
-        let row = Self::render_content(w, &status, row)?;
-        let row = Self::render_content(w, &divider, row)?;
-        let row = Self::render_content(w, "(Q) QUIT | (CTRL+C) ABORT", row)?;
+        let row = Self::render_content_line(w, &status, row)?;
+        let row = Self::render_content_line(w, &divider, row)?;
+        let row = Self::render_content_line(w, "(Q) QUIT | (CTRL+C) ABORT", row)?;
         Ok(row)
     }
 }
