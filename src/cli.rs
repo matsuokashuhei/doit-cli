@@ -87,7 +87,7 @@ pub fn build_command() -> Command {
                 .required(false)
                 .short('i')
                 .long("interval")
-                .value_parser(clap::value_parser!(u64).range(1..60))
+                .value_parser(clap::value_parser!(u64).range(1..=60))
                 .default_value("1")
                 .help("Refresh interval in seconds"),
         )
@@ -204,6 +204,10 @@ fn parse_style(s: &str) -> Result<Style, String> {
 
 #[cfg(test)]
 mod tests {
+    use std::result;
+
+    use assert_cmd::assert;
+
     use super::*;
 
     #[test]
@@ -471,6 +475,28 @@ mod tests {
         assert_eq!(parse_duration("3h"), Ok(Duration::hours(3)));
         assert_eq!(parse_duration("4d"), Ok(Duration::days(4)));
         assert!(parse_duration("5x").is_err());
+    }
+
+    #[test]
+    fn test_parse_interval_with_success() {
+        let test_cases = vec![("1", 1), ("10", 10), ("60", 60)];
+        for (input, expected) in test_cases {
+            let args = vec!["doit", "--duration", "9h", "--interval", input];
+            let command = build_command();
+            let args = Args::parse(command.get_matches_from(args));
+            assert_eq!(args.interval, expected);
+        }
+    }
+
+    #[test]
+    fn test_parse_interval_with_failure() {
+        let test_cases = ["-1", "0", "61"];
+        for input in test_cases {
+            let args = vec!["doit", "--duration", "9h", "--interval", input];
+            let command = build_command();
+            let result = command.try_get_matches_from(args);
+            assert!(result.is_err(), "Failed to parse interval: {input}");
+        }
     }
 
     #[test]
