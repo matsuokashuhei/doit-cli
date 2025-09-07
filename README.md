@@ -2,7 +2,7 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/matsuokashuhei/morrow)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/matsuokashuhei/doit-cli)
 
 **doit** is a CLI tool to visualize your time and boost your focus.
 Set a duration or deadline, and see your progress in real time.
