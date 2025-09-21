@@ -180,7 +180,7 @@ fn parse_date(s: &str) -> Result<NaiveDate, String> {
 }
 
 fn parse_duration(s: &str) -> Result<Duration, String> {
-    let re = Regex::new(r"^(\d+)([smhd])$").unwrap();
+    let re = Regex::new(r"^(\d+)([smhdy])$").unwrap();
     if let Some(caps) = re.captures(s) {
         let value = caps[1]
             .parse::<i64>()
@@ -191,6 +191,7 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
             "m" => return Ok(Duration::minutes(value)),
             "h" => return Ok(Duration::hours(value)),
             "d" => return Ok(Duration::days(value)),
+            "y" => return Ok(Duration::days(value * 365)),
             _ => {}
         }
     }
@@ -204,10 +205,6 @@ fn parse_style(s: &str) -> Result<Style, String> {
 
 #[cfg(test)]
 mod tests {
-    use std::result;
-
-    use assert_cmd::assert;
-
     use super::*;
 
     #[test]
@@ -297,6 +294,17 @@ mod tests {
         assert_eq!(
             args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
             "2025-01-02 10:20:30"
+        );
+    }
+
+    #[test]
+    fn test_parse_with_duration_years() {
+        let args = vec!["doit", "--start", "2025-01-01 10:20:30", "--duration", "1y"];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(
+            args.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2026-01-01 10:20:30"
         );
     }
 
