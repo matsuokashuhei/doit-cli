@@ -10,8 +10,8 @@ use crossterm::{
 };
 use doit::timespan::Timespan;
 use doit::{
-    build_command, Args, DefaultRenderer, HourglassRenderer, RetroRenderer, Style, StyledRenderer,
-    SynthwaveRenderer,
+    build_command, Args, DefaultRenderer, DotgridRenderer, HourglassRenderer, RetroRenderer, Style,
+    StyledRenderer, SynthwaveRenderer,
 };
 use std::io::{stdout, Write};
 use std::time::Duration;
@@ -51,6 +51,10 @@ where
             }
             Style::Synthwave => {
                 let renderer = SynthwaveRenderer::new(args.title.clone(), progress);
+                renderer.render(w)?
+            }
+            Style::Dotgrid => {
+                let renderer = DotgridRenderer::new(args.title.clone(), progress);
                 renderer.render(w)?
             }
         };

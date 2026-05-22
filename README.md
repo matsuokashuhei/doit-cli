@@ -27,7 +27,7 @@ Just Do It!
 - 🎨 **Smart dynamic formatting** - automatically adjusts time display based on duration
 - 🔄 **Real-time updates** with optimized 60-second refresh
 - 📝 **Custom title support** for motivational progress sessions
-- 🎭 **Multiple styles** (default, hourglass, retro, synthwave)
+- 🎭 **Multiple styles** (default, hourglass, retro, synthwave, dotgrid)
 - 🖥️ **Cross-platform** (Linux/macOS/Windows)
 - ⚡ **Colored output** with intelligent time calculations
 
@@ -90,6 +90,9 @@ doit --start "2025-08-10 09:00:00" --duration "8h" --title "CYBER FOCUS" --style
 # Use hourglass style for a visual sand timer effect
 doit --start "2025-08-10 09:00:00" --duration "8h" --title "Time is Flowing" --style hourglass
 
+# Use dotgrid style for a dot-matrix long-range countdown
+doit --start "2026-01-01" --end "2026-12-31" --title "Year Focus" --style dotgrid
+
 # Short form options
 doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
 ```
@@ -100,7 +103,7 @@ doit -s "2025-08-10 09:00:00" -d "8h" -t "My Task"
 - `--end` / `-e` End time (mutually exclusive with --duration)
 - `--duration` / `-d` Duration (e.g. `25m`, `2h`) (mutually exclusive with --end)
 - `--title` / `-t` title message for motivation
-- `--style` / `-S` Display style [default|hourglass|retro|synthwave]
+- `--style` / `-S` Display style [default|hourglass|retro|synthwave|dotgrid]
 
 ## Example Output
 
@@ -182,6 +185,16 @@ Time is Flowing
            ┃░░░░┊░░░░┃
            ┗━━━━━━━━━┛
 elapsed: 30m   |   remaining: 1h 30m
+```
+
+### Dotgrid Style Example
+
+```
+•  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •
+•  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •
+•  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •
+•  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •  •
+Year Focus                                      348d left
 ```
 
 ## Time Examples
