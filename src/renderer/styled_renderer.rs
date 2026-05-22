@@ -14,6 +14,7 @@ pub enum Style {
     Hourglass,
     Retro,
     Synthwave,
+    Dotgrid,
 }
 
 impl Style {
@@ -23,6 +24,7 @@ impl Style {
             "hourglass" => Style::Hourglass,
             "retro" => Style::Retro,
             "synthwave" => Style::Synthwave,
+            "dotgrid" => Style::Dotgrid,
             _ => Style::Default,
         }
     }

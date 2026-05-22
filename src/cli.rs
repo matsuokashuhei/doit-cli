@@ -97,7 +97,7 @@ pub fn build_command() -> Command {
                 .long("style")
                 .value_parser(parse_style)
                 .default_value("default")
-                .help("Display style [default|hourglass|retro|synthwave]"),
+                .help("Display style [default|hourglass|retro|synthwave|dotgrid]"),
         )
 }
 
@@ -633,5 +633,21 @@ mod tests {
         let command = build_command();
         let args = Args::parse(command.get_matches_from(args));
         assert_eq!(args.style, Style::Hourglass);
+    }
+
+    #[test]
+    fn test_parse_with_dotgrid_style() {
+        let args = vec![
+            "doit",
+            "--start",
+            "2025-01-01 10:20:30",
+            "--end",
+            "2025-12-31 23:59:59",
+            "--style",
+            "dotgrid",
+        ];
+        let command = build_command();
+        let args = Args::parse(command.get_matches_from(args));
+        assert_eq!(args.style, Style::Dotgrid);
     }
 }
